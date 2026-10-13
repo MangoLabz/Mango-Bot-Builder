@@ -1,0 +1,4779 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Mango Bot Builder</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+        :root {
+            --bg-base: #0c0d10;
+            --bg-canvas: #111216;
+            --bg-surface: #16171c;
+            --bg-elevated: #1c1d24;
+            --bg-overlay: #22232b;
+            --bg-input: #13141a;
+
+            --border-subtle: rgba(255,255,255,0.06);
+            --border-default: rgba(255,255,255,0.1);
+            --border-strong: rgba(255,255,255,0.15);
+
+            --accent: #6c5ce7;
+            --accent-hover: #7c6df7;
+            --accent-glow: rgba(108, 92, 231, 0.3);
+            --accent-green: #00b894;
+            --accent-green-glow: rgba(0, 184, 148, 0.3);
+            --accent-orange: #f39c12;
+            --accent-red: #e74c3c;
+            --accent-pink: #fd79a8;
+            --accent-cyan: #00cec9;
+            --accent-yellow: #fdcb6e;
+
+            --wire-action: #fd79a8;
+            --wire-data: #00b894;
+            --wire-object: #6c5ce7;
+
+            --text-primary: #eef0f4;
+            --text-secondary: #a0a4b0;
+            --text-muted: #6b7080;
+            --text-accent: #8b80f8;
+
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 14px;
+            --radius-xl: 18px;
+
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
+            --shadow-md: 0 4px 16px rgba(0,0,0,0.4);
+            --shadow-lg: 0 8px 32px rgba(0,0,0,0.5);
+            --shadow-glow: 0 0 20px var(--accent-glow);
+
+            --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-smooth: 350ms cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            user-select: none;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            background: var(--bg-base);
+            color: var(--text-primary);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            flex-direction: column;
+        }
+
+        /* ═══════════════ SCROLLBAR ═══════════════ */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+        /* ═══════════════ TOP BAR ═══════════════ */
+        .topbar {
+            height: 52px;
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            z-index: 50;
+            gap: 16px;
+            -webkit-app-region: drag;
+            position: relative;
+        }
+
+        .topbar::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+            opacity: 0.4;
+        }
+
+        .topbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            -webkit-app-region: no-drag;
+        }
+
+        .brand-icon {
+            width: 30px;
+            height: 30px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-pink));
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            box-shadow: 0 2px 10px rgba(108, 92, 231, 0.3);
+        }
+
+        .brand-text {
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            background: linear-gradient(135deg, var(--text-primary), var(--text-accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .brand-version {
+            font-size: 10px;
+            color: var(--text-muted);
+            background: var(--bg-overlay);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .topbar-center {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+            max-width: 480px;
+            -webkit-app-region: no-drag;
+        }
+
+        .token-label {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        .token-input {
+            flex: 1;
+            padding: 7px 12px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            color: var(--accent-green);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            outline: none;
+            transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+        }
+
+        .token-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        .topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            -webkit-app-region: no-drag;
+        }
+
+        .btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 14px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            letter-spacing: -0.2px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to bottom, rgba(255,255,255,0.1), transparent);
+            pointer-events: none;
+        }
+
+        .btn-run {
+            background: linear-gradient(135deg, #00b894, #00a381);
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(0, 184, 148, 0.3);
+        }
+        .btn-run:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 14px rgba(0, 184, 148, 0.4);
+        }
+        .btn-run.running {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3); }
+            50% { box-shadow: 0 2px 16px rgba(231, 76, 60, 0.6); }
+        }
+
+        .btn-save {
+            background: linear-gradient(135deg, var(--accent), #5b4bd6);
+            color: #fff;
+            box-shadow: 0 2px 8px var(--accent-glow);
+        }
+        .btn-save:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 14px var(--accent-glow);
+        }
+
+        .btn-generate {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(243, 156, 18, 0.3);
+        }
+        .btn-generate:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 14px rgba(243, 156, 18, 0.4);
+        }
+
+        .btn:active { transform: translateY(0); }
+
+        /* ═══════════════ MAIN LAYOUT ═══════════════ */
+        .main-layout {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* ═══════════════ SIDEBAR ═══════════════ */
+        .sidebar {
+            width: 260px;
+            min-width: 260px;
+            background: var(--bg-surface);
+            border-right: 1px solid var(--border-subtle);
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+            position: relative;
+        }
+
+        .sidebar-header {
+            padding: 14px 16px 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sidebar-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+        }
+
+        .sidebar-actions {
+            display: flex;
+            gap: 4px;
+        }
+
+        .btn-icon {
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 13px;
+            transition: all var(--transition-fast);
+        }
+
+        .btn-icon:hover {
+            background: var(--bg-overlay);
+            border-color: var(--border-default);
+            color: var(--text-primary);
+        }
+
+        .btn-icon.accent:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+        }
+
+        .ws-tree {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 8px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .ws-item {
+            padding: 8px 12px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+            transition: all var(--transition-fast);
+            position: relative;
+        }
+
+        .ws-item:hover {
+            background: var(--bg-overlay);
+            color: var(--text-primary);
+        }
+
+        .ws-item.active {
+            background: rgba(108, 92, 231, 0.12);
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .ws-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 4px;
+            bottom: 4px;
+            width: 3px;
+            background: var(--accent);
+            border-radius: 0 3px 3px 0;
+        }
+
+        .ws-icon {
+            font-size: 14px;
+            opacity: 0.7;
+        }
+
+        .project-selector-wrap {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            padding: 3px 8px;
+            -webkit-app-region: no-drag;
+        }
+
+        .project-select {
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-size: 11px;
+            font-weight: 600;
+            outline: none;
+            cursor: pointer;
+            padding: 2px 4px;
+        }
+
+        .project-select option {
+            background: var(--bg-surface);
+            color: var(--text-primary);
+        }
+
+        .btn-proj-action {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 12px;
+            padding: 2px 4px;
+            border-radius: 3px;
+            transition: all var(--transition-fast);
+        }
+
+        .btn-proj-action:hover {
+            color: var(--text-primary);
+            background: var(--bg-overlay);
+        }
+
+        .ws-item:hover .ws-actions { opacity: 1; }
+        .ws-actions {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            opacity: 0;
+            transition: opacity var(--transition-fast);
+        }
+
+        .ws-action-btn {
+            color: var(--text-muted);
+            font-size: 11px;
+            cursor: pointer;
+            padding: 2px 4px;
+            border-radius: 3px;
+            transition: all var(--transition-fast);
+        }
+
+        .ws-action-btn:hover {
+            color: var(--text-primary);
+            background: var(--bg-overlay);
+        }
+
+        .ws-action-btn.delete:hover {
+            color: var(--accent-red);
+        }
+
+        .folder-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+        }
+
+        .folder-header {
+            padding: 8px 12px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all var(--transition-fast);
+        }
+
+        .folder-header:hover {
+            color: var(--text-primary);
+            background: var(--bg-overlay);
+        }
+
+        .folder-arrow {
+            font-size: 8px;
+            transition: transform var(--transition-fast);
+        }
+        .folder-arrow.open { transform: rotate(90deg); }
+
+        .folder-workspaces {
+            padding-left: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+        }
+
+        /* Sidebar Stats */
+        .sidebar-stats {
+            padding: 12px 16px;
+            border-top: 1px solid var(--border-subtle);
+            display: flex;
+            gap: 8px;
+        }
+
+        .stat-pill {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 10px;
+            color: var(--text-muted);
+            background: var(--bg-overlay);
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+
+        .stat-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+        }
+
+        /* ═══════════════ CANVAS ═══════════════ */
+        .canvas-area {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            background-color: var(--bg-canvas);
+            cursor: default;
+        }
+
+        .canvas-grid {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .canvas-content {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 30000px;
+            height: 30000px;
+            transform-origin: 0 0;
+        }
+
+        .wires-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: stroke;
+            z-index: 2;
+        }
+
+        .wire-path {
+            stroke-width: 2.5;
+            fill: none;
+            stroke-linecap: round;
+            opacity: 0.85;
+            cursor: pointer;
+            transition: stroke-width 0.15s ease, opacity 0.15s ease;
+        }
+
+        .wire-path:hover {
+            stroke: var(--accent-red) !important;
+            stroke-width: 4;
+            opacity: 1;
+            filter: drop-shadow(0 0 6px rgba(231, 76, 60, 0.5));
+        }
+
+        /* ═══════════════ BLOCKS / NODES ═══════════════ */
+        .dbb-card {
+            position: absolute;
+            min-width: 250px;
+            max-height: 440px;
+            height: auto;
+            background: #1b1c24;
+            border: 1.5px solid rgba(255, 255, 255, 0.08);
+            border-radius: var(--radius-lg);
+            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+            display: flex;
+            flex-direction: column;
+            cursor: move;
+            z-index: 5;
+            transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+
+        .dbb-card:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .dbb-card.selected {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px var(--accent), var(--shadow-glow), var(--shadow-lg);
+        }
+
+        /* Stan zwinięty */
+        .dbb-card.collapsed {
+            height: auto !important;
+            min-height: unset !important;
+        }
+        .dbb-card.collapsed .dbb-card-body-wrap {
+            display: none !important;
+        }
+        .dbb-card.collapsed .dbb-resize-handle,
+        .dbb-card.collapsed .dbb-resize-edge-r,
+        .dbb-card.collapsed .dbb-resize-edge-b {
+            display: none !important;
+        }
+
+        .collapsed-ports {
+            display: none;
+            gap: 8px;
+            align-items: center;
+            margin-left: auto;
+            margin-right: 8px;
+        }
+        .dbb-card.collapsed .collapsed-ports {
+            display: flex;
+        }
+
+        /* Category color strips */
+        .dbb-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        }
+
+        .dbb-card[data-cat="events"]::before { background: linear-gradient(90deg, #00b894, #00cec9); }
+        .dbb-card[data-cat="bot"]::before { background: linear-gradient(90deg, #6c5ce7, #a29bfe); }
+        .dbb-card[data-cat="messaging"]::before { background: linear-gradient(90deg, #0984e3, #74b9ff); }
+        .dbb-card[data-cat="logic"]::before { background: linear-gradient(90deg, #fdcb6e, #ffeaa7); }
+        .dbb-card[data-cat="data"]::before { background: linear-gradient(90deg, #e17055, #fab1a0); }
+        .dbb-card[data-cat="interaction"]::before { background: linear-gradient(90deg, #fd79a8, #e84393); }
+        .dbb-card[data-cat="server"]::before { background: linear-gradient(90deg, #636e72, #b2bec3); }
+        .dbb-card[data-cat="member"]::before { background: linear-gradient(90deg, #00cec9, #81ecec); }
+        .dbb-card[data-cat="channel"]::before { background: linear-gradient(90deg, #a29bfe, #6c5ce7); }
+        .dbb-card[data-cat="default"]::before { background: linear-gradient(90deg, var(--accent), var(--accent-pink)); }
+
+        .dbb-header {
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255,255,255,0.03);
+            letter-spacing: -0.2px;
+            padding-top: 12px;
+            flex-shrink: 0;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .dbb-collapse-btn {
+            width: 18px;
+            height: 18px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            font-size: 11px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            user-select: none;
+            flex-shrink: 0;
+        }
+        .dbb-collapse-btn:hover {
+            background: var(--bg-overlay);
+            color: var(--text-primary);
+        }
+
+        .header-cat-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            flex-shrink: 0;
+        }
+
+        .dbb-card[data-cat="events"] .header-cat-icon { background: rgba(0,184,148,0.15); color: #00b894; }
+        .dbb-card[data-cat="bot"] .header-cat-icon { background: rgba(108,92,231,0.15); color: #a29bfe; }
+        .dbb-card[data-cat="messaging"] .header-cat-icon { background: rgba(9,132,227,0.15); color: #74b9ff; }
+        .dbb-card[data-cat="logic"] .header-cat-icon { background: rgba(253,203,110,0.15); color: #fdcb6e; }
+        .dbb-card[data-cat="data"] .header-cat-icon { background: rgba(225,112,85,0.15); color: #e17055; }
+        .dbb-card[data-cat="interaction"] .header-cat-icon { background: rgba(253,121,168,0.15); color: #fd79a8; }
+        .dbb-card[data-cat="server"] .header-cat-icon { background: rgba(99,110,114,0.15); color: #b2bec3; }
+        .dbb-card[data-cat="member"] .header-cat-icon { background: rgba(0,206,201,0.15); color: #00cec9; }
+        .dbb-card[data-cat="channel"] .header-cat-icon { background: rgba(162,155,254,0.15); color: #a29bfe; }
+        .dbb-card[data-cat="default"] .header-cat-icon { background: rgba(108,92,231,0.15); color: var(--accent); }
+
+        .dbb-close-btn {
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-size: 10px;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            background: transparent;
+            flex-shrink: 0;
+        }
+
+        .dbb-close-btn:hover {
+            background: rgba(231, 76, 60, 0.2);
+            color: var(--accent-red);
+        }
+
+        /* ═══════════════ CIAŁO BLOKU: WEJŚCIA I WYJŚCIA PO BOKACH, ŚRODEK SCROLLOWANY ═══════════════ */
+        .dbb-card-body-wrap {
+            display: flex;
+            flex-direction: row;
+            align-items: stretch;
+            flex: 1;
+            min-height: 0;
+            position: relative;
+            width: 100%;
+            box-sizing: border-box;
+            background: #1b1c24;
+            overflow: visible;
+        }
+
+        /* Kolumny portów po bokach bloku (NIE ruszają się przy scrollowaniu środka) */
+        .dbb-ports-col {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex-shrink: 0;
+            min-width: 50px;
+            max-width: 130px;
+            padding: 8px 6px;
+            z-index: 3;
+            box-sizing: border-box;
+        }
+
+        .dbb-ports-col.inputs {
+            align-items: flex-start;
+            padding-left: 0;
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .dbb-ports-col.outputs {
+            align-items: flex-end;
+            padding-right: 0;
+            border-left: 1px solid rgba(255, 255, 255, 0.05);
+            margin-left: auto;
+        }
+
+        /* Środkowa kolumna zawartości - TYLKO TA JEST SCROLLOWANA */
+        .dbb-center-scroll {
+            flex: 1;
+            min-width: 140px;
+            min-height: 0;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 8px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 1;
+            box-sizing: border-box;
+        }
+
+        .dbb-center-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .dbb-center-scroll::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: 4px;
+        }
+        .dbb-center-scroll::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+        .dbb-center-scroll::-webkit-scrollbar-thumb:hover {
+            background: var(--accent);
+        }
+
+        /* Uchwyty zmiany rozmiaru bloków (narożnik, prawa krawędź, dolna krawędź) */
+        .dbb-resize-handle {
+            position: absolute;
+            right: 0;
+            bottom: 0;
+            width: 16px;
+            height: 16px;
+            cursor: nwse-resize;
+            z-index: 10;
+        }
+        .dbb-resize-handle::after {
+            content: '';
+            position: absolute;
+            right: 4px;
+            bottom: 4px;
+            width: 7px;
+            height: 7px;
+            border-right: 2px solid var(--text-muted);
+            border-bottom: 2px solid var(--text-muted);
+            transition: border-color var(--transition-fast);
+        }
+        .dbb-resize-handle:hover::after {
+            border-color: var(--accent);
+        }
+
+        .dbb-resize-edge-r {
+            position: absolute;
+            right: 0;
+            top: 28px;
+            bottom: 16px;
+            width: 6px;
+            cursor: ew-resize;
+            z-index: 9;
+        }
+        .dbb-resize-edge-r:hover {
+            background: rgba(88, 101, 242, 0.3);
+        }
+
+        .dbb-resize-edge-b {
+            position: absolute;
+            bottom: 0;
+            left: 10px;
+            right: 16px;
+            height: 6px;
+            cursor: ns-resize;
+            z-index: 9;
+        }
+        .dbb-resize-edge-b:hover {
+            background: rgba(88, 101, 242, 0.3);
+        }
+
+        /* Splitter zmiany szerokości sidebara (Workspaces) */
+        .sidebar-resizer {
+            width: 5px;
+            cursor: col-resize;
+            background: transparent;
+            position: relative;
+            z-index: 15;
+            flex-shrink: 0;
+            transition: background 150ms ease;
+        }
+        .sidebar-resizer:hover, .sidebar-resizer.active {
+            background: #5865f2;
+        }
+
+        /* Splitter zmiany wysokości konsoli bota */
+        .console-resizer {
+            height: 5px;
+            cursor: row-resize;
+            background: transparent;
+            width: 100%;
+            z-index: 15;
+            flex-shrink: 0;
+            transition: background 150ms ease;
+        }
+        .console-resizer:hover, .console-resizer.active {
+            background: #5865f2;
+        }
+
+        /* Notatki grupujące (Notes) */
+        .dbb-note {
+            position: absolute;
+            border: 2px dashed rgba(255, 255, 255, 0.15);
+            border-radius: var(--radius-xl);
+            background: rgba(255, 255, 255, 0.015);
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            pointer-events: auto;
+            transition: border-color var(--transition-fast);
+        }
+        .dbb-note:hover {
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+        .dbb-note-header {
+            padding: 10px 16px;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-primary);
+            cursor: move;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            opacity: 0.85;
+        }
+
+        .dbb-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+            width: 100%;
+            margin-top: 4px;
+            padding-top: 8px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .dbb-ports-col {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+            flex: 1;
+        }
+        .dbb-ports-col.inputs { align-items: flex-start; }
+        .dbb-ports-col.outputs { align-items: flex-end; }
+
+        .port-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: #a0a4b8;
+            position: relative;
+            padding: 2px 4px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: color var(--transition-fast);
+            white-space: nowrap;
+        }
+        .port-item:hover {
+            color: #ffffff;
+        }
+
+        .dbb-ports-col.inputs .port-item {
+            padding-left: 0;
+        }
+        .dbb-ports-col.inputs .port-dot {
+            margin-left: -7px;
+        }
+
+        .dbb-ports-col.outputs .port-item {
+            padding-right: 0;
+        }
+        .dbb-ports-col.outputs .port-dot {
+            margin-right: -7px;
+        }
+        .port-item:hover {
+            color: #ffffff;
+        }
+
+        .port-dot {
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            display: inline-block;
+            cursor: pointer;
+            transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+            position: relative;
+            flex-shrink: 0;
+            box-shadow: 0 0 4px rgba(0, 0, 0, 0.6);
+        }
+
+        .port-dot::after {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            transition: border-color var(--transition-fast);
+        }
+
+        .port-dot:hover {
+            transform: scale(1.35);
+            box-shadow: 0 0 10px currentColor;
+        }
+
+        .port-dot:hover::after {
+            border-color: currentColor;
+        }
+
+        .port-dot.action {
+            background: #ff5e97;
+            border-radius: 3.5px;
+            width: 13px;
+            height: 13px;
+        }
+
+        .port-dot.action-out {
+            background: #ff5e97;
+            border-radius: 0;
+            clip-path: polygon(0 0, 100% 50%, 0 100%);
+            width: 15px;
+            height: 13px;
+        }
+
+        .port-dot.blue {
+            background: #5865f2;
+        }
+
+        .port-dot.green {
+            background: #2ecc71;
+        }
+
+        .port-dot.orange {
+            background: #f39c12;
+        }
+
+        .port-dot.cyan {
+            background: #00cec9;
+        }
+
+        /* Options box */
+        .dbb-options-box {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin: 2px 0;
+            background: #15161e;
+            padding: 8px 10px;
+            border-radius: var(--radius-md);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            overflow: visible;
+        }
+
+        .dbb-opt-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .dbb-opt-item label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .dbb-input, .dbb-select {
+            width: 100%;
+            padding: 6px 10px;
+            background: var(--bg-overlay);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: 12px;
+            font-family: 'Inter', sans-serif;
+            outline: none;
+            transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+        }
+
+        .dbb-input:focus, .dbb-select:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px var(--accent-glow);
+        }
+
+        .dbb-select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236b7080' fill='none' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            padding-right: 28px;
+        }
+
+        /* ═══════════════ CONTEXT MENU ═══════════════ */
+        .context-menu {
+            position: absolute;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-lg);
+            width: 280px;
+            max-height: 450px;
+            box-shadow: var(--shadow-lg);
+            display: none;
+            flex-direction: column;
+            z-index: 100;
+            overflow: hidden;
+            backdrop-filter: blur(20px);
+        }
+
+        .context-header {
+            padding: 12px 14px 8px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-muted);
+        }
+
+        .context-search {
+            padding: 0 10px 10px;
+        }
+
+        .context-search input {
+            width: 100%;
+            padding: 8px 12px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            outline: none;
+            font-size: 13px;
+            font-family: 'Inter', sans-serif;
+            transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+        }
+
+        .context-search input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px var(--accent-glow);
+        }
+
+        .context-search input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .context-list {
+            overflow-y: auto;
+            flex: 1;
+            padding: 4px 8px 10px;
+        }
+
+        .context-category {
+            font-size: 10px;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            color: var(--text-muted);
+            padding: 10px 8px 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .context-category::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border-subtle);
+        }
+
+        .context-item {
+            padding: 7px 10px;
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: all var(--transition-fast);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .context-item:hover {
+            background: rgba(108, 92, 231, 0.15);
+            color: var(--text-primary);
+        }
+
+        .context-item-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        /* ═══════════════ BOTTOM PANEL (CONSOLE) ═══════════════ */
+        .bottom-panel {
+            height: 0;
+            background: var(--bg-surface);
+            border-top: 1px solid var(--border-subtle);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: height var(--transition-smooth);
+        }
+
+        .bottom-panel.open {
+            height: 200px;
+        }
+
+        .bottom-panel-header {
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-subtle);
+            min-height: 36px;
+        }
+
+        .bottom-panel-title {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .console-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--accent-red);
+        }
+        .console-dot.active { background: var(--accent-green); animation: pulse-dot 2s infinite; }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .console-output {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 16px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            line-height: 1.6;
+            color: var(--text-secondary);
+        }
+
+        .console-line { margin-bottom: 2px; }
+        .console-line.error { color: var(--accent-red); }
+        .console-line.success { color: var(--accent-green); }
+        .console-line.info { color: var(--accent-cyan); }
+
+        /* ═══════════════ ZOOM CONTROLS ═══════════════ */
+        .zoom-controls {
+            position: absolute;
+            bottom: 16px;
+            right: 16px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 4px;
+            z-index: 20;
+            box-shadow: var(--shadow-md);
+        }
+
+        .zoom-btn {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border: none;
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 14px;
+            transition: all var(--transition-fast);
+        }
+
+        .zoom-btn:hover {
+            background: var(--bg-overlay);
+            color: var(--text-primary);
+        }
+
+        .zoom-level {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 600;
+            padding: 0 6px;
+            min-width: 40px;
+            text-align: center;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* ═══════════════ CONSOLE TOGGLE ═══════════════ */
+        .console-toggle {
+            position: absolute;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 6px 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            z-index: 20;
+            box-shadow: var(--shadow-md);
+            transition: all var(--transition-fast);
+        }
+
+        .console-toggle:hover {
+            background: var(--bg-overlay);
+            color: var(--text-primary);
+            border-color: var(--border-default);
+        }
+
+        /* ═══════════════ MINIMAP ═══════════════ */
+        .minimap {
+            position: absolute;
+            bottom: 60px;
+            right: 16px;
+            width: 180px;
+            height: 120px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            z-index: 20;
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+            opacity: 0.8;
+            transition: opacity var(--transition-fast);
+        }
+
+        .minimap:hover { opacity: 1; }
+
+        .minimap-canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* ═══════════════ TOAST NOTIFICATIONS ═══════════════ */
+        .toast-container {
+            position: fixed;
+            top: 64px;
+            right: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 1000;
+        }
+
+        .toast {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-md);
+            padding: 10px 16px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-primary);
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 250px;
+            animation: toast-in 0.3s ease-out;
+            backdrop-filter: blur(10px);
+        }
+
+        .toast.success { border-left: 3px solid var(--accent-green); }
+        .toast.error { border-left: 3px solid var(--accent-red); }
+        .toast.info { border-left: 3px solid var(--accent); }
+
+        @keyframes toast-in {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes toast-out {
+            from { opacity: 1; transform: translateX(0); }
+            to { opacity: 0; transform: translateX(20px); }
+        }
+
+        /* ═══════════════ SELECTION RECTANGLE ═══════════════ */
+        .selection-rect {
+            position: absolute;
+            border: 1px solid var(--accent);
+            background: rgba(108, 92, 231, 0.08);
+            border-radius: 2px;
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        /* ═══════════════ EMPTY STATE ═══════════════ */
+        .empty-state {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: var(--text-muted);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.3;
+        }
+
+        .empty-state-text {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 6px;
+        }
+
+        .empty-state-sub {
+            font-size: 12px;
+            opacity: 0.7;
+        }
+
+        /* ═══════════════ KEYBOARD SHORTCUT HINTS ═══════════════ */
+        kbd {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-overlay);
+            border: 1px solid var(--border-subtle);
+            border-radius: 4px;
+            padding: 1px 5px;
+            font-size: 10px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+    
+        /* ═══════ DBB TOP MENUBAR ═══════ */
+        .dbb-top-nav {
+            display: flex;
+            align-items: center;
+            height: 38px;
+            background: #0f1015;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 0 14px;
+            user-select: none;
+            z-index: 1000;
+        }
+        .dbb-app-icon {
+            width: 22px;
+            height: 22px;
+            background: linear-gradient(135deg, #7c3aed, #4f46e5);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            margin-right: 12px;
+            color: #fff;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(124, 58, 237, 0.4);
+        }
+        .dbb-nav-menu {
+            display: flex;
+            gap: 4px;
+        }
+        .dbb-menu-item {
+            position: relative;
+            padding: 5px 10px;
+            font-size: 12px;
+            font-weight: 500;
+            color: #b5b9c4;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 120ms ease;
+        }
+        .dbb-menu-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+        }
+        .dbb-dropdown {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            min-width: 180px;
+            background: #181922;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+            padding: 5px 0;
+            z-index: 2000;
+        }
+        .dbb-menu-item:hover .dbb-dropdown {
+            display: block;
+        }
+        .dbb-drop-item {
+            padding: 7px 14px;
+            font-size: 12px;
+            color: #c9ccd6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+        .dbb-drop-item:hover {
+            background: #5865f2;
+            color: #fff;
+        }
+        .dbb-drop-divider {
+            height: 1px;
+            background: rgba(255, 255, 255, 0.08);
+            margin: 4px 0;
+        }
+        .dbb-window-title {
+            flex: 1;
+            text-align: center;
+            font-size: 12px;
+            color: #8c909e;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+
+        /* ═══════ DBB DOCK (LEFT BAR) ═══════ */
+        .dbb-app-wrap {
+            display: flex;
+            flex-direction: row;
+            height: calc(100vh - 38px);
+            width: 100vw;
+            overflow: hidden;
+        }
+        .dbb-dock {
+            width: 52px;
+            background: #14151c;
+            border-right: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px 0;
+            gap: 10px;
+            z-index: 500;
+        }
+        .dbb-dock-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: transparent;
+            border: none;
+            color: #8c909e;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 150ms ease;
+        }
+        .dbb-dock-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+        }
+        .dbb-dock-btn.active {
+            background: #5865f2;
+            color: #fff;
+            box-shadow: 0 4px 14px rgba(88, 101, 242, 0.4);
+        }
+        
+        .dbb-dock-divider {
+            width: 32px;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.1);
+            margin: 4px 0;
+            flex-shrink: 0;
+        }
+
+        .dbb-dock-workspaces {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            overflow-y: auto;
+            overflow-x: hidden;
+            max-height: calc(100vh - 220px);
+            padding: 2px 0;
+        }
+
+        .dbb-dock-workspaces::-webkit-scrollbar {
+            display: none;
+        }
+
+        .dbb-dock-ws-btn {
+            position: relative;
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1.5px solid rgba(255, 255, 255, 0.08);
+            color: #b5bac1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 180ms ease;
+            flex-shrink: 0;
+            user-select: none;
+        }
+
+        .dbb-dock-ws-btn:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.25);
+            color: #fff;
+            transform: scale(1.05);
+        }
+
+        .dbb-dock-ws-btn.active {
+            background: #5865f2;
+            border-color: #7983f5;
+            color: #fff;
+            box-shadow: 0 4px 14px rgba(88, 101, 242, 0.5);
+        }
+
+        .dbb-dock-ws-btn.active::before {
+            content: '';
+            position: absolute;
+            left: -7px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 4px;
+            height: 20px;
+            background: #fff;
+            border-radius: 0 4px 4px 0;
+        }
+
+        .dock-ws-emoji {
+            font-size: 18px;
+        }
+
+        .dock-ws-initials {
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .dock-ws-close {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            width: 14px;
+            height: 14px;
+            background: #e74c3c;
+            color: #fff;
+            border-radius: 50%;
+            font-size: 9px;
+            font-weight: bold;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+            transition: transform 120ms ease;
+        }
+
+        .dbb-dock-ws-btn:hover .dock-ws-close {
+            display: flex;
+        }
+
+        .dock-ws-close:hover {
+            transform: scale(1.2);
+            background: #c0392b;
+        }
+
+        .dbb-dock-bottom {
+            margin-top: auto;
+        }
+
+        /* ═══════ DBB MAIN VIEWS CONTAINER ═══════ */
+        .dbb-content-views {
+            flex: 1;
+            position: relative;
+            height: 100%;
+            overflow: hidden;
+            background: #0f1015;
+        }
+        .dbb-view {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+        }
+        .dbb-view.active {
+            display: flex;
+        }
+
+        /* ═══════ HOME / START SCREEN 1:1 ═══════ */
+        .dbb-home-container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            padding: 24px 36px;
+            gap: 32px;
+            overflow-y: auto;
+            background: #101116;
+            box-sizing: border-box;
+        }
+        .home-col-left {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            max-width: 520px;
+        }
+        .home-col-right {
+            flex: 1.3;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            max-width: 660px;
+        }
+        .home-hero-card {
+            background: linear-gradient(135deg, #1d1b32 0%, #151622 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 30px 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        }
+        .home-logo-circle {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #2a2c44 0%, #131422 100%);
+            border: 2px solid rgba(255,255,255,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            margin-bottom: 12px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+        }
+        .home-app-title {
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: #9ea3b5;
+            text-transform: uppercase;
+            margin-bottom: 2px;
+        }
+        .home-app-subtitle {
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            color: #4b89ff;
+            text-transform: uppercase;
+            margin-bottom: 22px;
+        }
+        .home-hero-actions {
+            display: flex;
+            gap: 14px;
+        }
+        .btn-dbb-primary {
+            background: #252736;
+            color: #e2e4ea;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 8px;
+            padding: 9px 20px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 150ms ease;
+        }
+        .btn-dbb-primary:hover {
+            background: #5865f2;
+            color: #fff;
+            border-color: #5865f2;
+            box-shadow: 0 4px 16px rgba(88, 101, 242, 0.35);
+        }
+        .home-section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .home-section-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #f2f3f5;
+        }
+        .btn-dbb-text {
+            background: #1c1e28;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #a0a4b5;
+            border-radius: 6px;
+            padding: 5px 12px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 120ms ease;
+        }
+        .btn-dbb-text:hover {
+            background: rgba(255, 255, 255, 0.12);
+            color: #fff;
+        }
+        .recent-projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(105px, 1fr));
+            gap: 14px;
+        }
+        .recent-project-card {
+            background: #181922;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 16px 10px 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            cursor: pointer;
+            transition: all 150ms ease;
+        }
+        .remove-recent-btn {
+            position: absolute;
+            top: 6px;
+            right: 8px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            color: #8c909e;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            cursor: pointer;
+        }
+        .remove-recent-btn:hover {
+            background: #e74c3c;
+            color: #fff;
+        }
+        .recent-project-card:hover .remove-recent-btn {
+            display: flex;
+        }
+        .recent-project-card:hover {
+            background: #202230;
+            border-color: #5865f2;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(0,0,0,0.3);
+        }
+        .recent-avatar {
+            width: 52px;
+            height: 52px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 16px;
+            color: #ffffff;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .recent-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: #e2e4ea;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 90px;
+        }
+        .recent-workspaces-badge {
+            font-size: 10px;
+            color: #8c909e;
+            margin-top: 3px;
+        }
+
+        /* What's new card */
+        .whats-new-card {
+            background: #181922;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .whats-new-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #f2f3f5;
+        }
+        .whats-new-meta {
+            font-size: 12px;
+            color: #8c909e;
+            margin-top: -6px;
+        }
+        .whats-new-banner {
+            width: 100%;
+            height: 190px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #2ecc71 0%, #00cec9 35%, #9b59b6 70%, #ff5e97 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+        }
+        .banner-badge {
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 24px;
+            padding: 8px 22px;
+            font-weight: 800;
+            font-size: 16px;
+            letter-spacing: 1px;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+        }
+        .banner-sub-pill {
+            background: #5865f2;
+            border-radius: 20px;
+            padding: 4px 16px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #ffffff;
+            margin-top: 10px;
+            box-shadow: 0 4px 12px rgba(88,101,242,0.4);
+        }
+        .whats-new-text {
+            font-size: 13px;
+            color: #b5b9c4;
+            line-height: 1.5;
+        }
+
+        /* ═══════ DBB CUSTOM MODALS ═══════ */
+        .dbb-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.72);
+            backdrop-filter: blur(5px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        .dbb-modal-overlay.active {
+            display: flex;
+        }
+        .dbb-modal-card {
+            background: #181922;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 14px;
+            width: 440px;
+            max-width: 90vw;
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+            overflow: hidden;
+            animation: modalPop 140ms cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes modalPop {
+            from { transform: scale(0.95); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        .dbb-modal-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .dbb-modal-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #f2f3f5;
+        }
+        .dbb-modal-close {
+            background: none;
+            border: none;
+            color: #8c909e;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .dbb-modal-close:hover {
+            color: #fff;
+        }
+        .dbb-modal-body {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .dbb-modal-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #a0a4b5;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .dbb-modal-input {
+            background: #111218;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 8px;
+            padding: 10px 14px;
+            color: #fff;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 150ms ease;
+        }
+        .dbb-modal-input:focus {
+            border-color: #5865f2;
+        }
+        .dbb-modal-footer {
+            padding: 14px 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            background: #14151c;
+        }
+        .btn-modal-cancel {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #a0a4b5;
+            border-radius: 6px;
+            padding: 8px 16px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .btn-modal-cancel:hover {
+            background: rgba(255, 255, 255, 0.06);
+            color: #fff;
+        }
+        .btn-modal-confirm {
+            background: #5865f2;
+            border: none;
+            color: #fff;
+            border-radius: 6px;
+            padding: 8px 18px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(88, 101, 242, 0.3);
+        }
+        .btn-modal-confirm:hover {
+            background: #4752c4;
+        }
+
+    </style>
+</head>
+<body>
+    <!-- TOAST CONTAINER -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- DBB TOP MENUBAR 1:1 -->
+    <div class="dbb-top-nav">
+        <div class="dbb-app-icon" onclick="switchView('home')" title="Strona startowa">🔧</div>
+        <div class="dbb-nav-menu">
+            <div class="dbb-menu-item">
+                Project
+                <div class="dbb-dropdown">
+                    <div class="dbb-drop-item" onclick="openModal('modalNewProject')"><span>Nowy Projekt</span> <kbd>Ctrl+N</kbd></div>
+                    <div class="dbb-drop-item" onclick="openProjectDialog()"><span>Otwórz Projekt</span> <kbd>Ctrl+O</kbd></div>
+                    <div class="dbb-drop-divider"></div>
+                    <div class="dbb-drop-item" onclick="saveToDisk()"><span>Zapisz</span> <kbd>Ctrl+S</kbd></div>
+                    <div class="dbb-drop-item" onclick="generateBotJS()"><span>Generuj bot.js</span></div>
+                    <div class="dbb-drop-divider"></div>
+                    <div class="dbb-drop-item" onclick="switchView('home')"><span>Ekran startowy</span></div>
+                </div>
+            </div>
+            <div class="dbb-menu-item">
+                Selection
+                <div class="dbb-dropdown">
+                    <div class="dbb-drop-item" onclick="resetZoom()">Resetuj widok</div>
+                    <div class="dbb-drop-item" onclick="fitView()">Dopasuj do bloków</div>
+                </div>
+            </div>
+            <div class="dbb-menu-item">
+                View
+                <div class="dbb-dropdown">
+                    <div class="dbb-drop-item" onclick="switchView('home')">Home (Start)</div>
+                    <div class="dbb-drop-item" onclick="switchView('editor')">Workspace Editor</div>
+                    <div class="dbb-drop-divider"></div>
+                    <div class="dbb-drop-item" onclick="toggleConsole()">Konsola Bota <kbd>F12</kbd></div>
+                </div>
+            </div>
+            <div class="dbb-menu-item">
+                Bot
+                <div class="dbb-dropdown">
+                    <div class="dbb-drop-item" onclick="toggleBotRun()">Start / Stop Bota</div>
+                    <div class="dbb-drop-item" onclick="generateBotJS()">Generuj kod bota</div>
+                </div>
+            </div>
+            <div class="dbb-menu-item">
+                Help
+                <div class="dbb-dropdown">
+                    <div class="dbb-drop-item" onclick="showToast('Discord Bot Builder Alternative UI v1.0', 'info')">O programie</div>
+                </div>
+            </div>
+        </div>
+        <div class="dbb-window-title">Discord Bot Builder</div>
+    </div>
+
+    <!-- DBB APP WRAP -->
+    <div class="dbb-app-wrap">
+        <!-- LEFT DOCK -->
+        <div class="dbb-dock">
+            <button class="dbb-dock-btn active" id="dockBtnHome" onclick="switchView('home')" title="Home (Start)"><span style="font-size:20px;">🏠</span></button>
+            <div class="dbb-dock-divider"></div>
+            <!-- Ikony dla każdego otwartego kodu / workspace -->
+            <div class="dbb-dock-workspaces" id="dockOpenWorkspaces"></div>
+            <button class="dbb-dock-btn" onclick="openModal('modalNewWorkspace')" title="Nowy Workspace" style="font-size:16px; opacity:0.75;">＋</button>
+            <div class="dbb-dock-bottom">
+                <button class="dbb-dock-btn" onclick="openWorkspaceCodeModal()" title="Kopiuj / Wklej Kod Workspace (Schowek/Plik)"><span style="font-size:18px;">📋</span></button>
+                <button class="dbb-dock-btn" onclick="openModal('modalSettings')" title="Ustawienia"><span style="font-size:18px;">⚙️</span></button>
+            </div>
+        </div>
+
+        <!-- MAIN VIEWS -->
+        <div class="dbb-content-views">
+            <!-- VIEW 1: HOME (START SCREEN 1:1) -->
+            <div class="dbb-view active" id="viewHome">
+                <div class="dbb-home-container">
+                    <!-- LEFT COLUMN -->
+                    <div class="home-col-left">
+                        <!-- HERO CARD -->
+                        <div class="home-hero-card">
+                            <div class="home-logo-circle">🔧</div>
+                            <div class="home-app-title">Discord Bot</div>
+                            <div class="home-app-subtitle">Builder</div>
+                            <div class="home-hero-actions">
+                                <button class="btn-dbb-primary" onclick="openModal('modalNewProject')">New Project</button>
+                                <button class="btn-dbb-primary" onclick="openProjectDialog()">Open Project</button>
+                            </div>
+                        </div>
+
+                        <!-- RECENT PROJECTS SECTION -->
+                        <div class="home-recent-section">
+                            <div class="home-section-header">
+                                <span class="home-section-title">Recent</span>
+                                <button class="btn-dbb-text" onclick="clearRecentProjects()">Clear All</button>
+                            </div>
+                            <div class="recent-projects-grid" id="recentProjectsGrid">
+                                <!-- Dynamic recent projects cards -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- RIGHT COLUMN: WHAT'S NEW -->
+                    <div class="home-col-right">
+                        <div class="home-section-header">
+                            <span class="home-section-title">What's New</span>
+                            <button class="btn-dbb-text">Show More</button>
+                        </div>
+                        <div class="whats-new-card">
+                            <div class="whats-new-title">Utility Update</div>
+                            <div class="whats-new-meta">1.0.0-preview.6 • 2025-02-27</div>
+                            <div class="whats-new-banner">
+                                <div class="banner-badge">
+                                    <span>🔧</span>
+                                    <span>UTILITY UPDATE</span>
+                                </div>
+                                <div class="banner-sub-pill">1.0.0-PREVIEW.6</div>
+                            </div>
+                            <div class="whats-new-text">
+                                <strong>Hey Builders!</strong><br>
+                                This update brings new features related to user experience and user interface. Below are some of these features implemented, but there are more features that, as they are small details, are not worth highlighting, but check the changelog to find out more.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 2: WORKSPACE EDITOR -->
+            <div class="dbb-view" id="viewEditor" style="flex-direction: column;">
+                <!-- EDITOR TOP BAR -->
+                <div class="topbar" style="background:#13141b; border-bottom:1px solid rgba(255,255,255,0.08); padding:0 16px; height:46px;">
+                    <div class="topbar-brand" style="gap:12px;">
+                        <span style="font-size:16px;">🤖</span>
+                        <span class="brand-text" id="editorProjectTitle" style="font-size:14px; font-weight:700; color:#fff;">Mango Bot</span>
+                        <span class="brand-version" id="editorWsTitle" style="background:rgba(0,184,148,0.15); color:var(--accent-green); border:1px solid rgba(0,184,148,0.3); padding:2px 8px; border-radius:6px; font-size:11px;">Workspace: Start</span>
+                    </div>
+                    <div class="topbar-center">
+                        <span class="token-label">Token:</span>
+                        <input type="password" id="botToken" class="token-input" placeholder="Wklej token bota..." style="width:260px;">
+                    </div>
+                    <div class="topbar-actions">
+                        <button class="btn btn-save" onclick="openWorkspaceCodeModal()" title="Kopiuj lub wklej kod tego workspace (JSON)" style="background:rgba(255,255,255,0.08);">
+                            <span>📋</span> Kod
+                        </button>
+                        <button class="btn btn-generate" id="btnGenerate" onclick="generateBotJS()" title="Generuj bot.js z workspace'ów">
+                            ⚡ Generuj
+                        </button>
+                        <button class="btn btn-run" id="btnRunBot" onclick="toggleBotRun()">
+                            <span>▶</span> Start
+                        </button>
+                        <button class="btn btn-save" onclick="saveToDisk()">
+                            <span>💾</span> Zapisz
+                        </button>
+                    </div>
+                </div>
+                <!-- MAIN WORKSPACE LAYOUT --><!-- MAIN WORKSPACE LAYOUT -->
+                <div class="main-layout" style="flex:1;">
+                    <!-- SIDEBAR -->
+                    <div class="sidebar" id="mainSidebar">
+                        <div class="sidebar-header">
+                            <span class="sidebar-title">Workspaces</span>
+                            <div class="sidebar-actions">
+                                <button class="btn-icon accent" onclick="openWorkspaceCodeModal('import')" title="Wklej / Importuj kod workspace">📥</button>
+                                <button class="btn-icon accent" onclick="openModal('modalNewFolder')" title="Nowy folder">📁</button>
+                                <button class="btn-icon accent" onclick="openModal('modalNewWorkspace')" title="Nowy workspace">＋</button>
+                            </div>
+                        </div>
+                        <div class="ws-tree" id="wsTree"></div>
+                        <div class="sidebar-stats" id="sidebarStats">
+                            <div class="stat-pill">
+                                <div class="stat-dot" style="background: var(--accent-green)"></div>
+                                <span id="statBlocks">0 bloków</span>
+                            </div>
+                            <div class="stat-pill">
+                                <div class="stat-dot" style="background: var(--accent)"></div>
+                                <span id="statWires">0 połączeń</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- SIDEBAR RESIZER -->
+                    <div class="sidebar-resizer" id="sidebarResizer" title="Przeciągnij, aby zmienić szerokość panelu"></div>
+
+                    <!-- CANVAS -->
+                    <div class="canvas-area" id="canvasArea">
+                        <canvas class="canvas-grid" id="canvasGrid"></canvas>
+                        <div class="canvas-content" id="canvasContent">
+                            <svg class="wires-svg" id="wiresSvg"></svg>
+                            <div id="blocksContainer"></div>
+                        </div>
+
+                        <div class="empty-state" id="emptyState">
+                            <div class="empty-state-icon">🥭</div>
+                            <div class="empty-state-text">Kliknij prawym przyciskiem myszy, aby dodać bloki</div>
+                            <div class="empty-state-sub">Przeciągnij bloki i połącz je kablami</div>
+                        </div>
+
+                        <!-- ZOOM CONTROLS -->
+                        <div class="zoom-controls">
+                            <button class="zoom-btn" onclick="zoomCanvas(-0.1)" title="Oddal">−</button>
+                            <span class="zoom-level" id="zoomLevel">100%</span>
+                            <button class="zoom-btn" onclick="zoomCanvas(0.1)" title="Przybliż">+</button>
+                            <button class="zoom-btn" onclick="resetZoom()" title="Resetuj zoom do 100%" style="font-size: 11px;">⊙</button>
+                            <button class="zoom-btn" onclick="fitView()" title="Dopasuj widok (Wyśrodkuj bloki)" style="font-size: 12px;">⛶</button>
+                        </div>
+
+                        <!-- MINIMAP -->
+                        <div class="minimap" id="minimap">
+                            <canvas class="minimap-canvas" id="minimapCanvas" width="180" height="120"></canvas>
+                        </div>
+
+                        <!-- CONSOLE TOGGLE -->
+                        <div class="console-toggle" onclick="toggleConsole()">
+                            <span id="consoleDotToggle" class="console-dot"></span>
+                            <span>Konsola</span>
+                            <kbd>F12</kbd>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DBB CUSTOM MODALS -->
+    <!-- Modal: New Folder -->
+    <div class="dbb-modal-overlay" id="modalNewFolder">
+        <div class="dbb-modal-card">
+            <div class="dbb-modal-header">
+                <span class="dbb-modal-title">📁 Nowy Folder</span>
+                <button class="dbb-modal-close" onclick="closeModal('modalNewFolder')">✕</button>
+            </div>
+            <div class="dbb-modal-body">
+                <label class="dbb-modal-label">Nazwa folderu</label>
+                <input type="text" class="dbb-modal-input" id="inputNewFolderTitle" placeholder="np. Komendy Administracyjne" onkeydown="if(event.key==='Enter')confirmNewFolder()">
+            </div>
+            <div class="dbb-modal-footer">
+                <button class="btn-modal-cancel" onclick="closeModal('modalNewFolder')">Anuluj</button>
+                <button class="btn-modal-confirm" onclick="confirmNewFolder()">Utwórz Folder</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: New Workspace -->
+    <div class="dbb-modal-overlay" id="modalNewWorkspace">
+        <div class="dbb-modal-card">
+            <div class="dbb-modal-header">
+                <span class="dbb-modal-title">🧩 Nowy Workspace</span>
+                <button class="dbb-modal-close" onclick="closeModal('modalNewWorkspace')">✕</button>
+            </div>
+            <div class="dbb-modal-body">
+                <label class="dbb-modal-label">Nazwa workspace</label>
+                <input type="text" class="dbb-modal-input" id="inputNewWsTitle" placeholder="np. Ban Command" onkeydown="if(event.key==='Enter')confirmNewWorkspace()">
+            </div>
+            <div class="dbb-modal-footer">
+                <button class="btn-modal-cancel" onclick="closeModal('modalNewWorkspace')">Anuluj</button>
+                <button class="btn-modal-confirm" onclick="confirmNewWorkspace()">Utwórz Workspace</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: New Project -->
+    <div class="dbb-modal-overlay" id="modalNewProject">
+        <div class="dbb-modal-card" style="width: 500px;">
+            <div class="dbb-modal-header">
+                <span class="dbb-modal-title">⚡ Nowy Projekt Bota</span>
+                <button class="dbb-modal-close" onclick="closeModal('modalNewProject')">✕</button>
+            </div>
+            <div class="dbb-modal-body">
+                <div>
+                    <label class="dbb-modal-label">Nazwa bota</label>
+                    <input type="text" class="dbb-modal-input" style="width:100%; box-sizing:border-box; margin-top:4px;" id="inputNewProjectName" placeholder="np. Mój Nowy Bot" oninput="autoUpdateProjectPath()" onkeydown="if(event.key==='Enter')confirmNewProject()">
+                </div>
+                <div>
+                    <label class="dbb-modal-label">Folder zapisu (zostaną tam skopiowane wszystkie bloki i pliki bota)</label>
+                    <div style="display:flex; gap:8px; margin-top:4px;">
+                        <input type="text" class="dbb-modal-input" style="flex:1; box-sizing:border-box;" id="inputNewProjectPath" placeholder="/home/rakunek/Dokumenty/Moje/Boty/...">
+                        <button class="btn-modal-cancel" onclick="browseNewProjectFolder()" style="white-space:nowrap;">📁 Przeglądaj...</button>
+                    </div>
+                </div>
+            </div>
+            <div class="dbb-modal-footer">
+                <button class="btn-modal-cancel" onclick="closeModal('modalNewProject')">Anuluj</button>
+                <button class="btn-modal-confirm" onclick="confirmNewProject()">Utwórz Bota</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Open Project -->
+    <div class="dbb-modal-overlay" id="modalOpenProject">
+        <div class="dbb-modal-card">
+            <div class="dbb-modal-header">
+                <span class="dbb-modal-title">📂 Otwórz Projekt</span>
+                <button class="dbb-modal-close" onclick="closeModal('modalOpenProject')">✕</button>
+            </div>
+            <div class="dbb-modal-body">
+                <label class="dbb-modal-label">Wybierz projekt z listy</label>
+                <select class="dbb-modal-input" id="selectOpenProject"></select>
+            </div>
+            <div class="dbb-modal-footer">
+                <button class="btn-modal-cancel" onclick="closeModal('modalOpenProject')">Anuluj</button>
+                <button class="btn-modal-confirm" onclick="confirmOpenProject()">Otwórz</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Workspace Code (Copy / Export / Import / Send) -->
+    <div class="dbb-modal-overlay" id="modalWorkspaceCode">
+        <div class="dbb-modal-card" style="width: 680px; max-width: 90vw;">
+            <div class="dbb-modal-header">
+                <span class="dbb-modal-title">📋 Kod Workspace (Kopiowanie / Eksport / Wklejanie)</span>
+                <button class="dbb-modal-close" onclick="closeModal('modalWorkspaceCode')">✕</button>
+            </div>
+            <div class="dbb-modal-body" style="display:flex; flex-direction:column; gap:14px;">
+                <!-- Tabs header -->
+                <div style="display:flex; gap:10px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px;">
+                    <button class="btn btn-save active" id="tabBtnExportCode" onclick="switchWsCodeTab('export')" style="font-size:12px; padding:6px 14px;">📤 Kopiuj / Eksportuj Kod</button>
+                    <button class="btn btn-save" id="tabBtnImportCode" onclick="switchWsCodeTab('import')" style="font-size:12px; padding:6px 14px; background:rgba(255,255,255,0.06); color:var(--text-secondary);">📥 Wklej / Importuj Kod</button>
+                </div>
+
+                <!-- Tab 1: Export / Copy -->
+                <div id="tabContentExportCode" style="display:flex; flex-direction:column; gap:10px;">
+                    <div style="font-size:12px; color:var(--text-secondary);">
+                        Poniżej znajduje się pełny kod JSON bieżącego workspace (<strong id="wsCodeCurrentName" style="color:#fff;">Nazwa</strong>). Możesz go skopiować jednym kliknięciem do schowka, aby wysłać komuś na Discordzie lub pobrać jako plik.
+                    </div>
+                    <textarea id="wsCodeExportText" readonly class="dbb-modal-input" style="height:220px; font-family:monospace; font-size:11px; line-height:1.4; resize:vertical; background:#0e0f14; color:#a29bfe; white-space:pre;"></textarea>
+                    <div style="display:flex; gap:10px; justify-content:flex-end;">
+                        <button class="btn btn-run" onclick="downloadWorkspaceFile()" style="font-size:12px; padding:6px 14px;">
+                            💾 Zapisz plik .json
+                        </button>
+                        <button class="btn-dbb-primary" onclick="copyWorkspaceCodeFromModal()" style="font-size:13px; padding:7px 18px;">
+                            📋 Kopiuj kod do schowka
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tab 2: Import / Paste -->
+                <div id="tabContentImportCode" style="display:none; flex-direction:column; gap:10px;">
+                    <div style="font-size:12px; color:var(--text-secondary);">
+                        Wklej poniżej kod JSON workspace (otrzymany od kogoś lub skopiowany z innego bota). Możesz utworzyć z niego nowy workspace lub wkleić bloki do aktualnego.
+                    </div>
+                    <textarea id="wsCodeImportText" placeholder="Wklej tutaj kod JSON workspace..." class="dbb-modal-input" style="height:200px; font-family:monospace; font-size:11px; line-height:1.4; resize:vertical; background:#0e0f14; color:#00cec9; white-space:pre;"></textarea>
+                    <div style="display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap;">
+                        <button class="btn btn-save" onclick="pasteCodeFromClipboard()" style="font-size:12px; padding:6px 12px;" title="Wklej ze schowka systemowego">
+                            📋 Wklej ze schowka
+                        </button>
+                        <button class="btn btn-run" onclick="applyImportWorkspace('merge')" style="font-size:12px; padding:6px 14px;" title="Dodaje bloki ze skopiowanego kodu do aktualnego workspace">
+                            🔗 Wklej bloki do bieżącego
+                        </button>
+                        <button class="btn-dbb-primary" onclick="applyImportWorkspace('new')" style="font-size:12px; padding:6px 16px;" title="Tworzy nowy workspace z wklejonego kodu">
+                            ➕ Utwórz jako nowy Workspace
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="dbb-modal-footer">
+                <button class="btn-modal-cancel" onclick="closeModal('modalWorkspaceCode')">Zamknij</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Settings -->
+    <div class="dbb-modal-overlay" id="modalSettings">
+        <div class="dbb-modal-card">
+            <div class="dbb-modal-header">
+                <span class="dbb-modal-title">⚙️ Ustawienia</span>
+                <button class="dbb-modal-close" onclick="closeModal('modalSettings')">✕</button>
+            </div>
+            <div class="dbb-modal-body">
+                <div style="font-size:13px; color:#c9ccd6;">
+                    <p><strong>Discord Bot Builder Linux Alternative UI</strong></p>
+                    <p style="margin-top:6px; color:#8c909e;">Kompatybilność z blokami i plikami workspaces.json DBB v1.0.0-preview.6</p>
+                </div>
+            </div>
+            <div class="dbb-modal-footer">
+                <button class="btn-modal-confirm" onclick="closeModal('modalSettings')">Zamknij</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- BOTTOM PANEL: Console --><!-- BOTTOM PANEL: Console -->
+    <div class="bottom-panel" id="bottomPanel">
+        <div class="console-resizer" id="consoleResizer" title="Przeciągnij, aby zmienić wysokość konsoli"></div>
+        <div class="bottom-panel-header">
+            <div class="bottom-panel-title">
+                <span id="consoleDot" class="console-dot"></span>
+                Konsola Bota
+            </div>
+            <div style="display:flex; gap: 6px; align-items:center;">
+                <button class="btn-icon" onclick="clearConsole()" title="Wyczyść konsolę">🗑</button>
+                <button class="btn-icon" onclick="toggleConsole()" title="Zamknij">✕</button>
+            </div>
+        </div>
+        <div class="console-output" id="consoleOutput"></div>
+    </div>
+
+    <!-- CONTEXT MENU -->
+    <div class="context-menu" id="contextMenu">
+        <div class="context-header">Dodaj blok</div>
+        <div class="context-search">
+            <input type="text" id="ctxSearch" placeholder="🔍 Szukaj bloku..." oninput="filterContextMenu()">
+        </div>
+        <div class="context-list" id="ctxList"></div>
+    </div>
+
+    <script>
+        const { ipcRenderer } = require('electron');
+
+        // ═══════ STATE ═══════
+        let rawWorkspacesData = [];
+        let openWorkspaceIds = [];
+        let currentWorkspace = null;
+        let installedBlocks = [];
+        let selectedNodeIdx = null;
+        let isBotRunning = false;
+        let currentProjectName = null;
+
+        let panX = 0, panY = 0;
+        let zoomScale = 1;
+        let isPanning = false;
+        let startPan = { x: 0, y: 0 };
+
+        let isDraggingBlock = false;
+        let dragBlockIdx = null;
+        let dragOffset = { x: 0, y: 0 };
+
+        let isResizingBlock = false;
+        let resizeBlockIdx = null;
+        let resizeMode = "both";
+        let resizeStart = { x: 0, y: 0, w: 0, h: 0 };
+
+        let connectingWire = null;
+        let ctxMenuPos = { x: 0, y: 0 };
+        let consoleOpen = false;
+
+        // ═══════ CATEGORY HELPER ═══════
+        function getCategorySlug(category) {
+            const cat = (category || '').toLowerCase();
+            if (cat.includes('event')) return 'events';
+            if (cat.includes('bot')) return 'bot';
+            if (cat.includes('message') || cat.includes('send') || cat.includes('component')) return 'messaging';
+            if (cat.includes('logic') || cat.includes('control') || cat.includes('check') || cat.includes('loop') || cat.includes('condition')) return 'logic';
+            if (cat.includes('data') || cat.includes('text') || cat.includes('list') || cat.includes('object') || cat.includes('variable') || cat.includes('json') || cat.includes('number') || cat.includes('math')) return 'data';
+            if (cat.includes('interaction') || cat.includes('command') || cat.includes('slash') || cat.includes('button') || cat.includes('modal')) return 'interaction';
+            if (cat.includes('server') || cat.includes('guild')) return 'server';
+            if (cat.includes('member') || cat.includes('user') || cat.includes('role')) return 'member';
+            if (cat.includes('channel') || cat.includes('thread') || cat.includes('voice') || cat.includes('forum')) return 'channel';
+            return 'default';
+        }
+
+        function getCategoryIcon(slug) {
+            const icons = {
+                'events': '⚡', 'bot': '🤖', 'messaging': '💬', 'logic': '🔀',
+                'data': '📦', 'interaction': '🎯', 'server': '🏠', 'member': '👤',
+                'channel': '📺', 'default': '◆'
+            };
+            return icons[slug] || '◆';
+        }
+
+        function getCategoryColor(slug) {
+            const colors = {
+                'events': '#00b894', 'bot': '#6c5ce7', 'messaging': '#0984e3', 'logic': '#fdcb6e',
+                'data': '#e17055', 'interaction': '#fd79a8', 'server': '#636e72', 'member': '#00cec9',
+                'channel': '#a29bfe', 'default': '#6c5ce7'
+            };
+            return colors[slug] || '#6c5ce7';
+        }
+
+        // Pomocnik do dynamicznych definicji bloków
+        function getBlockFullDef(block) {
+            const baseDef = installedBlocks.find(b => b.idName === block.name) || {
+                idName: block.name,
+                name: block.name.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+                category: 'General',
+                inputs: [],
+                options: [],
+                outputs: []
+            };
+            try {
+                const path = require('path');
+                const fs = require('fs');
+                const filePath = path.join(__dirname, '..', 'blocks', `${block.name}.js`);
+                if (fs.existsSync(filePath)) {
+                    delete require.cache[require.resolve(filePath)];
+                    const mod = require(filePath);
+                    const resolveProp = (p, data) => {
+                        if (Array.isArray(p)) return p;
+                        if (typeof p === 'function') {
+                            const res = p(data);
+                            return Array.isArray(res) ? res : [];
+                        }
+                        return [];
+                    };
+                    const inps = resolveProp(mod.inputs, block);
+                    const opts = resolveProp(mod.options, block);
+                    const outs = resolveProp(mod.outputs, block);
+                    return {
+                        ...baseDef,
+                        inputs: (inps && inps.length > 0) ? inps : baseDef.inputs,
+                        options: (opts && opts.length > 0) ? opts : baseDef.options,
+                        outputs: (outs && outs.length > 0) ? outs : baseDef.outputs
+                    };
+                }
+            } catch (e) {}
+            return baseDef;
+        }
+
+        // ═══════ PROJECTS MANAGEMENT ═══════
+        async function loadProjectsList() {
+            try {
+                const data = await ipcRenderer.invoke('get-projects');
+                const sel = document.getElementById('projectSelect');
+                if (!sel) return;
+                sel.innerHTML = '';
+                (data.projects || ['Mango Bot']).forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p;
+                    opt.textContent = p;
+                    if (p === data.current) opt.selected = true;
+                    sel.appendChild(opt);
+                });
+            } catch (err) {
+                console.error('Błąd ładowania listy projektów:', err);
+            }
+        }
+
+        async function switchProject(projectName) {
+            if (!projectName) return;
+            const res = await ipcRenderer.invoke('switch-project', projectName);
+            if (res.ok) {
+                showToast(`Przełączono na projekt: "${res.current}"`, 'info');
+                currentWorkspace = null;
+                selectedNodeIdx = null;
+                openWorkspaceIds = [];
+                rawWorkspacesData = await ipcRenderer.invoke('load-workspaces');
+                renderWorkspacesTree();
+                findAndActivateDefaultWorkspace();
+                await loadProjectsList();
+            } else {
+                showToast(`Błąd: ${res.error}`, 'error');
+            }
+        }
+
+        async function promptNewProject() {
+            const name = prompt("Podaj nazwę nowego projektu:");
+            if (!name || !name.trim()) return;
+            const res = await ipcRenderer.invoke('create-project', name.trim());
+            if (res.ok) {
+                showToast(`Projekt "${res.current}" utworzony!`, 'success');
+                currentWorkspace = null;
+                selectedNodeIdx = null;
+                rawWorkspacesData = await ipcRenderer.invoke('load-workspaces');
+                renderWorkspacesTree();
+                findAndActivateDefaultWorkspace();
+                await loadProjectsList();
+            } else {
+                showToast(`Błąd: ${res.error}`, 'error');
+            }
+        }
+
+        async function deleteCurrentProject() {
+            const sel = document.getElementById('projectSelect');
+            const projName = sel ? sel.value : '';
+            if (!projName || projName === 'Mango Bot') {
+                showToast('Nie można usunąć domyślnego projektu Mango Bot!', 'error');
+                return;
+            }
+            if (!confirm(`Czy na pewno chcesz bezpowrotnie usunąć projekt "${projName}"?`)) return;
+            const res = await ipcRenderer.invoke('delete-project', projName);
+            if (res.ok) {
+                showToast(`Usunięto projekt "${projName}"`, 'info');
+                currentWorkspace = null;
+                selectedNodeIdx = null;
+                rawWorkspacesData = await ipcRenderer.invoke('load-workspaces');
+                renderWorkspacesTree();
+                findAndActivateDefaultWorkspace();
+                await loadProjectsList();
+            } else {
+                showToast(`Błąd: ${res.error}`, 'error');
+            }
+        }
+
+        // ═══════ INIT ═══════
+        async function init() {
+            installedBlocks = await ipcRenderer.invoke('get-installed-blocks');
+            setupCanvasEvents();
+            setupPanelResizers();
+            setupKeyboardShortcuts();
+            drawGrid();
+            window.addEventListener('resize', drawGrid);
+            switchView('home');
+
+            ipcRenderer.on('bot-log', (event, msg) => {
+                addConsoleLine(msg);
+            });
+            ipcRenderer.on('bot-status', (event, running) => updateBotStatus(running));
+        }
+
+        // ═══════ TOAST NOTIFICATIONS ═══════
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            const icons = { success: '✅', error: '❌', info: 'ℹ️' };
+            toast.innerHTML = `<span>${icons[type] || 'ℹ️'}</span> ${message}`;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.animation = 'toast-out 0.3s ease-in forwards';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // ═══════ CONSOLE ═══════
+        function toggleConsole() {
+            const panel = document.getElementById('bottomPanel');
+            consoleOpen = !consoleOpen;
+            panel.classList.toggle('open', consoleOpen);
+        }
+
+        function addConsoleLine(text, type = '') {
+            const output = document.getElementById('consoleOutput');
+            const line = document.createElement('div');
+            line.className = `console-line ${type}`;
+            const time = new Date().toLocaleTimeString('pl-PL');
+            line.innerHTML = `<span style="color:var(--text-muted)">[${time}]</span> ${escapeHTML(text)}`;
+            output.appendChild(line);
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function clearConsole() {
+            document.getElementById('consoleOutput').innerHTML = '';
+        }
+
+        function escapeHTML(str) {
+            const div = document.createElement('div');
+            div.innerText = str;
+            return div.innerHTML;
+        }
+
+        // ═══════ BOT RUN/STOP ═══════
+        async function toggleBotRun() {
+            const token = document.getElementById('botToken').value.trim();
+
+            if (!isBotRunning) {
+                if (!token) {
+                    showToast('Wpisz token bota!', 'error');
+                    return;
+                }
+                await ipcRenderer.invoke('save-workspaces', rawWorkspacesData);
+                await ipcRenderer.invoke('generate-bot', token);
+                const res = await ipcRenderer.invoke('start-bot', token);
+                if (res.status === 'started' || res.status === 'already_running') {
+                    updateBotStatus(true);
+                    if (!consoleOpen) toggleConsole();
+                    showToast('Bot uruchomiony!', 'success');
+                }
+            } else {
+                await ipcRenderer.invoke('stop-bot');
+                updateBotStatus(false);
+                showToast('Bot zatrzymany', 'info');
+            }
+        }
+
+        function updateBotStatus(running) {
+            isBotRunning = running;
+            const btn = document.getElementById('btnRunBot');
+            const dots = document.querySelectorAll('.console-dot');
+
+            if (running) {
+                btn.innerHTML = '<span>⏹</span> Stop';
+                btn.classList.add('running');
+                dots.forEach(d => d.classList.add('active'));
+            } else {
+                btn.innerHTML = '<span>▶</span> Start';
+                btn.classList.remove('running');
+                dots.forEach(d => d.classList.remove('active'));
+            }
+        }
+
+        // ═══════ GRID DRAWING ═══════
+        function drawGrid() {
+            const canvas = document.getElementById('canvasGrid');
+            const area = document.getElementById('canvasArea');
+            const ctx = canvas.getContext('2d');
+            const dpr = window.devicePixelRatio || 1;
+
+            canvas.width = area.offsetWidth * dpr;
+            canvas.height = area.offsetHeight * dpr;
+            canvas.style.width = area.offsetWidth + 'px';
+            canvas.style.height = area.offsetHeight + 'px';
+            ctx.scale(dpr, dpr);
+
+            const gridSize = 24 * zoomScale;
+            const offsetX = panX % gridSize;
+            const offsetY = panY % gridSize;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Small dots
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+            for (let x = offsetX; x < area.offsetWidth; x += gridSize) {
+                for (let y = offsetY; y < area.offsetHeight; y += gridSize) {
+                    ctx.beginPath();
+                    ctx.arc(x, y, 1, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            // Large grid crosshairs every 5 dots
+            const bigGridSize = gridSize * 5;
+            const bigOffsetX = panX % bigGridSize;
+            const bigOffsetY = panY % bigGridSize;
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.09)';
+            for (let x = bigOffsetX; x < area.offsetWidth; x += bigGridSize) {
+                for (let y = bigOffsetY; y < area.offsetHeight; y += bigGridSize) {
+                    ctx.beginPath();
+                    ctx.arc(x, y, 1.5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
+
+        // ═══════ WORKSPACE TREE ═══════
+        function renderWorkspacesTree() {
+            const container = document.getElementById('wsTree');
+            container.innerHTML = '';
+            if (!rawWorkspacesData || rawWorkspacesData.length === 0) {
+                container.innerHTML = '<div style="padding: 20px 14px; text-align: center; color: var(--text-muted); font-size: 12px; line-height: 1.5;">Brak workspace\'ów w tym bocie.<br><br><button class="btn-dbb-primary" style="padding: 5px 12px; font-size: 11px;" onclick="openModal(\'modalNewWorkspace\')">＋ Dodaj Workspace</button></div>';
+                updateStats();
+                return;
+            }
+
+            rawWorkspacesData.forEach((item, rootIdx) => {
+                if (item.workspaces && Array.isArray(item.workspaces)) {
+                    // FOLDER
+                    const folderEl = document.createElement('div');
+                    folderEl.className = 'folder-container';
+
+                    const fHeader = document.createElement('div');
+                    fHeader.className = 'folder-header';
+                    const isOpen = !item.info.collapsed;
+                    fHeader.innerHTML = `
+                        <span class="folder-arrow ${isOpen ? 'open' : ''}">▶</span>
+                        <span class="ws-icon">${isOpen ? '📂' : '📁'}</span>
+                        <span>${item.info.title || 'Folder'}</span>
+                    `;
+                    fHeader.onclick = () => {
+                        item.info.collapsed = !item.info.collapsed;
+                        renderWorkspacesTree();
+                    };
+                    folderEl.appendChild(fHeader);
+
+                    if (isOpen) {
+                        const wsList = document.createElement('div');
+                        wsList.className = 'folder-workspaces';
+                        item.workspaces.forEach(ws => {
+                            wsList.appendChild(createWsItem(ws));
+                        });
+                        folderEl.appendChild(wsList);
+                    }
+                    container.appendChild(folderEl);
+                } else {
+                    // STANDALONE WORKSPACE
+                    container.appendChild(createWsItem(item));
+                }
+            });
+
+            updateStats();
+        }
+
+        function createWsItem(ws) {
+            const wsEl = document.createElement('div');
+            const isSelected = currentWorkspace && currentWorkspace.id === ws.id;
+            const isEnabled = ws.active !== false;
+            wsEl.className = `ws-item ${isSelected ? 'active' : ''}`;
+            wsEl.innerHTML = `
+                <span class="stat-dot" title="${isEnabled ? 'Aktywny w bocie (kliknij, aby wyłączyć)' : 'Wyłączony w bocie (kliknij, aby włączyć)'}"
+                      style="background: ${isEnabled ? 'var(--accent-green)' : 'var(--text-muted)'}; cursor: pointer; flex-shrink: 0;"
+                      onclick="event.stopPropagation(); toggleWorkspaceActive('${ws.id}')"></span>
+                <span class="ws-icon">📄</span>
+                <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;">${ws.info ? ws.info.title : 'Workspace'}</span>
+                <div class="ws-actions" onclick="event.stopPropagation();">
+                    <span class="ws-action-btn" title="Kopiuj kod tego workspace (JSON do schowka / wysłania)" onclick="copyWorkspaceCode('${ws.id}')">📋</span>
+                    <span class="ws-action-btn" title="Duplikuj workspace" onclick="duplicateWorkspace('${ws.id}')">📄</span>
+                    <span class="ws-action-btn delete" title="Usuń workspace" onclick="deleteWorkspace('${ws.id}')">✕</span>
+                </div>
+            `;
+            wsEl.onclick = () => switchWorkspace(ws);
+            return wsEl;
+        }
+
+        function duplicateWorkspace(id) {
+            let targetWs = null;
+            let parentFolder = null;
+            let insertIndex = -1;
+
+            for (let i = 0; i < rawWorkspacesData.length; i++) {
+                const item = rawWorkspacesData[i];
+                if (item.id === id) {
+                    targetWs = item;
+                    insertIndex = i + 1;
+                    break;
+                }
+                if (item.workspaces) {
+                    const fIdx = item.workspaces.findIndex(w => w.id === id);
+                    if (fIdx !== -1) {
+                        targetWs = item.workspaces[fIdx];
+                        parentFolder = item;
+                        insertIndex = fIdx + 1;
+                        break;
+                    }
+                }
+            }
+
+            if (!targetWs) {
+                showToast('Nie znaleziono workspace do skopiowania', 'error');
+                return;
+            }
+
+            // Głęboka kopia
+            const clonedWs = JSON.parse(JSON.stringify(targetWs));
+            clonedWs.id = "ws_" + Date.now().toString(36) + "_" + Math.random().toString(36).substring(2, 6);
+            if (!clonedWs.info) clonedWs.info = {};
+            clonedWs.info.title = `${clonedWs.info.title || 'Workspace'} (Kopia)`;
+
+            // Remapowanie wszystkich wireId na unikalne nowe ID
+            const wireMap = new Map();
+            const getNewWireId = (oldId) => {
+                if (!wireMap.has(oldId)) {
+                    wireMap.set(oldId, Math.random().toString(36).substring(2, 12));
+                }
+                return wireMap.get(oldId);
+            };
+
+            if (Array.isArray(clonedWs.blocks)) {
+                // Krok 1: Przeskanuj wyjścia i stwórz mapowanie
+                clonedWs.blocks.forEach(b => {
+                    if (b.outputs && typeof b.outputs === 'object') {
+                        Object.keys(b.outputs).forEach(outKey => {
+                            const val = b.outputs[outKey];
+                            if (Array.isArray(val)) {
+                                val.forEach(item => {
+                                    if (Array.isArray(item)) {
+                                        item.forEach(wId => {
+                                            if (typeof wId === 'string' && wId.trim()) getNewWireId(wId);
+                                        });
+                                    } else if (typeof item === 'string' && item.trim()) {
+                                        getNewWireId(item);
+                                    }
+                                });
+                            }
+                        });
+                    }
+                });
+
+                // Krok 2: Zaktualizuj wyjścia nowymi ID
+                clonedWs.blocks.forEach(b => {
+                    if (b.outputs && typeof b.outputs === 'object') {
+                        Object.keys(b.outputs).forEach(outKey => {
+                            const val = b.outputs[outKey];
+                            if (Array.isArray(val)) {
+                                b.outputs[outKey] = val.map(item => {
+                                    if (Array.isArray(item)) {
+                                        return item.map(wId => wireMap.has(wId) ? wireMap.get(wId) : getNewWireId(wId));
+                                    } else if (typeof item === 'string' && item.trim()) {
+                                        return wireMap.has(item) ? wireMap.get(item) : getNewWireId(item);
+                                    }
+                                    return item;
+                                });
+                            }
+                        });
+                    }
+
+                    // Krok 3: Zaktualizuj wejścia zremapowanymi ID
+                    if (b.inputs && typeof b.inputs === 'object') {
+                        Object.keys(b.inputs).forEach(inKey => {
+                            const val = b.inputs[inKey];
+                            if (Array.isArray(val)) {
+                                b.inputs[inKey] = val.map(wId => wireMap.has(wId) ? wireMap.get(wId) : wId);
+                            } else if (typeof val === 'string' && wireMap.has(val)) {
+                                b.inputs[inKey] = wireMap.get(val);
+                            }
+                        });
+                    }
+                });
+            }
+
+            // Wstawienie do listy obok oryginału
+            if (parentFolder) {
+                parentFolder.workspaces.splice(insertIndex, 0, clonedWs);
+            } else {
+                rawWorkspacesData.splice(insertIndex, 0, clonedWs);
+            }
+
+            renderWorkspacesTree();
+            switchWorkspace(clonedWs);
+            saveToDisk();
+            showToast(`Skopiowano workspace "${clonedWs.info.title}"!`, 'success');
+        }
+
+        function toggleWorkspaceActive(id) {
+            for (const item of rawWorkspacesData) {
+                if (item.id === id) {
+                    item.active = item.active === false ? true : false;
+                    break;
+                }
+                if (item.workspaces) {
+                    const found = item.workspaces.find(w => w.id === id);
+                    if (found) {
+                        found.active = found.active === false ? true : false;
+                        break;
+                    }
+                }
+            }
+            renderWorkspacesTree();
+        }
+
+        // ═══════ WORKSPACE RESOLUTION & DOCK ICONS ═══════
+        function findWorkspaceById(id) {
+            if (!id || !rawWorkspacesData) return null;
+            for (const item of rawWorkspacesData) {
+                if (item.id === id) return item;
+                if (item.workspaces && Array.isArray(item.workspaces)) {
+                    const found = item.workspaces.find(w => w.id === id);
+                    if (found) return found;
+                }
+            }
+            return null;
+        }
+
+        function renderDockWorkspaces() {
+            const dockContainer = document.getElementById('dockOpenWorkspaces');
+            if (!dockContainer) return;
+            dockContainer.innerHTML = '';
+
+            // Filtrujemy otwarte ID tylko do tych istniejących w projekcie
+            openWorkspaceIds = openWorkspaceIds.filter(id => Boolean(findWorkspaceById(id)));
+
+            openWorkspaceIds.forEach(id => {
+                const ws = findWorkspaceById(id);
+                if (!ws) return;
+
+                const isCurrent = currentWorkspace && currentWorkspace.id === ws.id;
+                const btn = document.createElement('div');
+                btn.className = `dbb-dock-ws-btn ${isCurrent ? 'active' : ''}`;
+                
+                const title = ws.info?.title || 'Workspace';
+                btn.title = `${title} (Otwarty kod)`;
+
+                let iconHtml = '';
+                const titleLower = title.toLowerCase();
+                if (titleLower.includes('event') || titleLower.includes('on') || titleLower.includes('ready')) {
+                    iconHtml = '<span class="dock-ws-emoji">⚡</span>';
+                } else if (titleLower.includes('command') || titleLower.includes('slash') || titleLower.includes('cmd')) {
+                    iconHtml = '<span class="dock-ws-emoji">⌨️</span>';
+                } else if (titleLower.includes('mod') || titleLower.includes('ban') || titleLower.includes('admin') || titleLower.includes('kick')) {
+                    iconHtml = '<span class="dock-ws-emoji">🛡️</span>';
+                } else if (titleLower.includes('msg') || titleLower.includes('message') || titleLower.includes('wiadomość') || titleLower.includes('send')) {
+                    iconHtml = '<span class="dock-ws-emoji">💬</span>';
+                } else if (titleLower.includes('bot') || titleLower.includes('mango')) {
+                    iconHtml = '<span class="dock-ws-emoji">🤖</span>';
+                } else if (titleLower.includes('start')) {
+                    iconHtml = '<span class="dock-ws-emoji">🚀</span>';
+                } else {
+                    let letters = title.split(/[\s-_]+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
+                    if (!letters) letters = title.slice(0, 2).toUpperCase() || 'WS';
+                    iconHtml = `<span class="dock-ws-initials">${letters}</span>`;
+                }
+
+                btn.innerHTML = `
+                    ${iconHtml}
+                    <span class="dock-ws-close" title="Zamknij ten otwarty kod" onclick="closeDockWorkspace(event, '${ws.id}')">✕</span>
+                `;
+
+                btn.onclick = () => {
+                    switchView('editor');
+                    switchWorkspace(ws);
+                };
+
+                dockContainer.appendChild(btn);
+            });
+        }
+
+        function closeDockWorkspace(e, id) {
+            if (e) e.stopPropagation();
+            openWorkspaceIds = openWorkspaceIds.filter(wsId => wsId !== id);
+            if (currentWorkspace && currentWorkspace.id === id) {
+                if (openWorkspaceIds.length > 0) {
+                    const nextWs = findWorkspaceById(openWorkspaceIds[openWorkspaceIds.length - 1]);
+                    switchWorkspace(nextWs);
+                } else {
+                    currentWorkspace = null;
+                    document.getElementById('editorWsTitle').textContent = 'Brak otwartego kodu';
+                    renderCanvas();
+                }
+            }
+            renderDockWorkspaces();
+            renderWorkspacesTree();
+        }
+
+        function deleteWorkspace(id) {
+            if (!confirm('Usunąć ten workspace?')) return;
+            for (let i = 0; i < rawWorkspacesData.length; i++) {
+                const item = rawWorkspacesData[i];
+                if (item.id === id) {
+                    rawWorkspacesData.splice(i, 1);
+                    break;
+                }
+                if (item.workspaces) {
+                    const idx = item.workspaces.findIndex(w => w.id === id);
+                    if (idx !== -1) {
+                        item.workspaces.splice(idx, 1);
+                        break;
+                    }
+                }
+            }
+            openWorkspaceIds = openWorkspaceIds.filter(wsId => wsId !== id);
+            if (currentWorkspace && currentWorkspace.id === id) {
+                if (openWorkspaceIds.length > 0) {
+                    const nextWs = findWorkspaceById(openWorkspaceIds[openWorkspaceIds.length - 1]);
+                    switchWorkspace(nextWs);
+                } else {
+                    currentWorkspace = null;
+                    document.getElementById('editorWsTitle').textContent = 'Brak otwartego kodu';
+                    renderCanvas();
+                }
+            }
+            renderDockWorkspaces();
+            renderWorkspacesTree();
+            showToast('Workspace usunięty', 'info');
+        }
+
+        function findAndActivateDefaultWorkspace() {
+            if (!rawWorkspacesData || rawWorkspacesData.length === 0) {
+                currentWorkspace = null;
+                openWorkspaceIds = [];
+                document.getElementById('editorWsTitle').textContent = 'Brak workspace';
+                renderCanvas();
+                renderWorkspacesTree();
+                renderDockWorkspaces();
+                return;
+            }
+
+            // Jeśli są już otwarte kody w doku, aktywuj ostatni z nich
+            if (openWorkspaceIds.length > 0) {
+                const lastOpen = findWorkspaceById(openWorkspaceIds[openWorkspaceIds.length - 1]);
+                if (lastOpen) return switchWorkspace(lastOpen);
+            }
+
+            for (const item of rawWorkspacesData) {
+                if (item.workspaces && item.workspaces.length > 0) {
+                    const act = item.workspaces.find(w => w.active);
+                    return switchWorkspace(act || item.workspaces[0]);
+                } else if (item.blocks) {
+                    if (item.active) return switchWorkspace(item);
+                }
+            }
+            if (rawWorkspacesData[0]) {
+                if (rawWorkspacesData[0].workspaces && rawWorkspacesData[0].workspaces[0]) {
+                    switchWorkspace(rawWorkspacesData[0].workspaces[0]);
+                } else {
+                    switchWorkspace(rawWorkspacesData[0]);
+                }
+            }
+        }
+
+        function switchWorkspace(ws) {
+            if (!ws) {
+                currentWorkspace = null;
+                document.getElementById('editorWsTitle').textContent = 'Brak otwartego kodu';
+                renderCanvas();
+                renderDockWorkspaces();
+                renderWorkspacesTree();
+                return;
+            }
+
+            currentWorkspace = ws;
+            selectedNodeIdx = null;
+
+            // Dodaj do listy otwartych kodów po boku
+            if (!openWorkspaceIds.includes(ws.id)) {
+                openWorkspaceIds.push(ws.id);
+            }
+
+            document.getElementById('editorWsTitle').textContent = `Workspace: ${currentWorkspace.info?.title || 'Bez nazwy'}`;
+
+            renderDockWorkspaces();
+            renderWorkspacesTree();
+            renderCanvas();
+
+            // Jeśli widok jest pusty lub bloki są poza zasięgiem, wyśrodkuj
+            setTimeout(() => {
+                if (currentWorkspace && currentWorkspace.blocks && currentWorkspace.blocks.length > 0) {
+                    fitView();
+                }
+            }, 60);
+        }
+
+        
+        // ═══════ KOD WORKSPACE (KOPIOWANIE / EKSPORT / IMPORT) ═══════
+        function getCleanWorkspaceJson(ws) {
+            if (!ws) return null;
+            return {
+                id: ws.id,
+                active: ws.active !== false,
+                info: ws.info || { title: 'Workspace' },
+                blocks: Array.isArray(ws.blocks) ? ws.blocks : [],
+                notes: Array.isArray(ws.notes) ? ws.notes : []
+            };
+        }
+
+        function copyWorkspaceCode(wsId) {
+            const ws = wsId ? findWorkspaceById(wsId) : currentWorkspace;
+            if (!ws) {
+                showToast('Wybierz workspace, którego kod chcesz skopiować', 'error');
+                return;
+            }
+            const cleanObj = getCleanWorkspaceJson(ws);
+            const jsonStr = JSON.stringify(cleanObj, null, 2);
+
+            navigator.clipboard.writeText(jsonStr).then(() => {
+                showToast(`Skopiowano kod workspace "${cleanObj.info.title}" do schowka!`, 'success');
+            }).catch(() => {
+                const ta = document.createElement('textarea');
+                ta.value = jsonStr;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                showToast(`Skopiowano kod workspace "${cleanObj.info.title}" do schowka!`, 'success');
+            });
+        }
+
+        function openWorkspaceCodeModal(defaultTab = 'export') {
+            if (!currentProjectName) {
+                showToast('Najpierw otwórz lub utwórz projekt bota', 'info');
+                return;
+            }
+
+            const modal = document.getElementById('modalWorkspaceCode');
+            if (!modal) return;
+
+            if (!currentWorkspace && defaultTab === 'export') {
+                defaultTab = 'import';
+            }
+
+            switchWsCodeTab(defaultTab);
+
+            // Wypełnij dane eksportu
+            if (currentWorkspace) {
+                const title = currentWorkspace.info?.title || 'Workspace';
+                document.getElementById('wsCodeCurrentName').textContent = title;
+                const cleanObj = getCleanWorkspaceJson(currentWorkspace);
+                document.getElementById('wsCodeExportText').value = JSON.stringify(cleanObj, null, 2);
+            } else {
+                document.getElementById('wsCodeCurrentName').textContent = 'Brak otwartego workspace';
+                document.getElementById('wsCodeExportText').value = '// Brak otwartego workspace. Wybierz workspace z listy lub przejdź do zakładki "Wklej / Importuj Kod".';
+            }
+
+            openModal('modalWorkspaceCode');
+        }
+
+        function switchWsCodeTab(tab) {
+            const tabExport = document.getElementById('tabContentExportCode');
+            const tabImport = document.getElementById('tabContentImportCode');
+            const btnExport = document.getElementById('tabBtnExportCode');
+            const btnImport = document.getElementById('tabBtnImportCode');
+
+            if (tab === 'export') {
+                tabExport.style.display = 'flex';
+                tabImport.style.display = 'none';
+                btnExport.classList.add('active');
+                btnExport.style.background = '';
+                btnExport.style.color = '';
+                btnImport.classList.remove('active');
+                btnImport.style.background = 'rgba(255,255,255,0.06)';
+                btnImport.style.color = 'var(--text-secondary)';
+            } else {
+                tabExport.style.display = 'none';
+                tabImport.style.display = 'flex';
+                btnImport.classList.add('active');
+                btnImport.style.background = '';
+                btnImport.style.color = '';
+                btnExport.classList.remove('active');
+                btnExport.style.background = 'rgba(255,255,255,0.06)';
+                btnExport.style.color = 'var(--text-secondary)';
+            }
+        }
+
+        function copyWorkspaceCodeFromModal() {
+            const text = document.getElementById('wsCodeExportText').value;
+            if (!text || text.startsWith('//')) {
+                showToast('Brak kodu do skopiowania', 'error');
+                return;
+            }
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('Kod workspace skopiowany do schowka! Możesz go teraz wysłać lub wkleić.', 'success');
+            }).catch(() => {
+                const ta = document.getElementById('wsCodeExportText');
+                ta.select();
+                document.execCommand('copy');
+                showToast('Kod workspace skopiowany do schowka!', 'success');
+            });
+        }
+
+        function downloadWorkspaceFile() {
+            const text = document.getElementById('wsCodeExportText').value;
+            if (!text || text.startsWith('//')) {
+                showToast('Brak kodu do pobrania', 'error');
+                return;
+            }
+            const title = (currentWorkspace?.info?.title || 'workspace').replace(/[^a-z0-9_-]/gi, '_').toLowerCase();
+            const blob = new Blob([text], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${title}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast(`Pobrano plik "${title}.json"`, 'success');
+        }
+
+        async function pasteCodeFromClipboard() {
+            try {
+                const text = await navigator.clipboard.readText();
+                if (text && text.trim()) {
+                    document.getElementById('wsCodeImportText').value = text.trim();
+                    showToast('Wklejono tekst ze schowka systemowego', 'info');
+                } else {
+                    showToast('Schowek jest pusty', 'info');
+                }
+            } catch (e) {
+                showToast('Użyj skrótu Ctrl+V w polu tekstowym, aby wkleić kod', 'info');
+            }
+        }
+
+        function applyImportWorkspace(mode) {
+            const rawText = document.getElementById('wsCodeImportText').value.trim();
+            if (!rawText) {
+                showToast('Wklej kod JSON workspace przed zatwierdzeniem', 'error');
+                return;
+            }
+
+            let parsed;
+            try {
+                parsed = JSON.parse(rawText);
+            } catch (e) {
+                showToast('Nieprawidłowy format JSON: upewnij się, że wklejono poprawny kod', 'error');
+                return;
+            }
+
+            // Obsługa różnych formatów (obiekt workspace lub tablica bloków)
+            let importedBlocks = [];
+            let importedTitle = 'Zaimportowany Workspace';
+
+            if (Array.isArray(parsed)) {
+                importedBlocks = parsed;
+            } else if (parsed && typeof parsed === 'object') {
+                importedBlocks = Array.isArray(parsed.blocks) ? parsed.blocks : [];
+                if (parsed.info?.title) importedTitle = parsed.info.title;
+                else if (parsed.name) importedTitle = parsed.name;
+            }
+
+            if (importedBlocks.length === 0 && (!parsed || typeof parsed !== 'object')) {
+                showToast('Wklejony kod nie zawiera żadnych bloków ani poprawnej struktury workspace', 'error');
+                return;
+            }
+
+            // Remapowanie kabli i bloków, aby nie kolidowały z istniejącymi
+            const wireMap = new Map();
+            const getNewWireId = (oldId) => {
+                if (!wireMap.has(oldId)) {
+                    wireMap.set(oldId, Math.random().toString(36).substring(2, 12));
+                }
+                return wireMap.get(oldId);
+            };
+
+            const remappedBlocks = JSON.parse(JSON.stringify(importedBlocks));
+
+            remappedBlocks.forEach(b => {
+                b.id = "block_" + Date.now().toString(36) + "_" + Math.random().toString(36).substring(2, 6);
+                if (mode === 'merge') {
+                    b.x = (b.x || 100) + 70;
+                    b.y = (b.y || 100) + 70;
+                }
+
+                if (b.outputs && typeof b.outputs === 'object') {
+                    Object.keys(b.outputs).forEach(outKey => {
+                        const val = b.outputs[outKey];
+                        if (Array.isArray(val)) {
+                            b.outputs[outKey] = val.map(item => {
+                                if (Array.isArray(item)) {
+                                    return item.map(wId => wireMap.has(wId) ? wireMap.get(wId) : getNewWireId(wId));
+                                } else if (typeof item === 'string' && item.trim()) {
+                                    return wireMap.has(item) ? wireMap.get(item) : getNewWireId(item);
+                                }
+                                return item;
+                            });
+                        }
+                    });
+                }
+
+                if (b.inputs && typeof b.inputs === 'object') {
+                    Object.keys(b.inputs).forEach(inKey => {
+                        const val = b.inputs[inKey];
+                        if (Array.isArray(val)) {
+                            b.inputs[inKey] = val.map(wId => wireMap.has(wId) ? wireMap.get(wId) : wId);
+                        } else if (typeof val === 'string' && wireMap.has(val)) {
+                            b.inputs[inKey] = wireMap.get(val);
+                        }
+                    });
+                }
+            });
+
+            if (mode === 'new') {
+                const newWs = {
+                    id: "ws_" + Date.now().toString(36) + "_" + Math.random().toString(36).substring(2, 6),
+                    active: true,
+                    info: {
+                        title: importedTitle || 'Nowy Workspace',
+                        description: parsed.info?.description || '',
+                        thumbnail: ''
+                    },
+                    blocks: remappedBlocks,
+                    notes: parsed.notes || []
+                };
+                rawWorkspacesData.push(newWs);
+                closeModal('modalWorkspaceCode');
+                renderWorkspacesTree();
+                switchWorkspace(newWs);
+                saveToDisk();
+                showToast(`Utworzono nowy workspace "${newWs.info.title}" (${remappedBlocks.length} bloków)!`, 'success');
+            } else if (mode === 'merge') {
+                if (!currentWorkspace) {
+                    showToast('Najpierw otwórz workspace, do którego chcesz wkleić bloki', 'error');
+                    return;
+                }
+                if (!Array.isArray(currentWorkspace.blocks)) currentWorkspace.blocks = [];
+                currentWorkspace.blocks.push(...remappedBlocks);
+                closeModal('modalWorkspaceCode');
+                renderCanvas();
+                saveToDisk();
+                showToast(`Wklejono ${remappedBlocks.length} bloków do bieżącego workspace!`, 'success');
+            }
+        }
+
+        function updateStats() {
+            const blocks = (currentWorkspace && currentWorkspace.blocks) ? currentWorkspace.blocks.length : 0;
+            let wires = 0;
+            if (currentWorkspace && currentWorkspace.blocks) {
+                currentWorkspace.blocks.forEach(b => {
+                    if (b.outputs) {
+                        Object.values(b.outputs).forEach(arr => {
+                            if (Array.isArray(arr)) {
+                                wires += arr.flat().filter(x => typeof x === 'string' && x.trim() !== '').length;
+                            }
+                        });
+                    }
+                });
+            }
+            document.getElementById('statBlocks').textContent = `${blocks} bloków`;
+            document.getElementById('statWires').textContent = `${wires} połączeń`;
+        }
+
+        // ═══════ CANVAS RENDERING ═══════
+        function renderCanvas() {
+            const container = document.getElementById('blocksContainer');
+            container.innerHTML = '';
+
+            const emptyState = document.getElementById('emptyState');
+            const emptyText = emptyState.querySelector('.empty-state-text');
+            const emptySub = emptyState.querySelector('.empty-state-sub');
+
+            if (!currentWorkspace) {
+                emptyState.style.display = 'block';
+                if (emptyText) emptyText.textContent = 'Brak aktywnego workspace\'u';
+                if (emptySub) emptySub.textContent = 'Kliknij ＋ w lewym panelu, aby utworzyć nowy workspace dla tego bota';
+                drawWires();
+                updateStats();
+                return;
+            }
+
+            const hasBlocks = currentWorkspace && currentWorkspace.blocks && currentWorkspace.blocks.length > 0;
+            emptyState.style.display = hasBlocks ? 'none' : 'block';
+            if (emptyText) emptyText.textContent = 'Workspace jest pusty';
+            if (emptySub) emptySub.textContent = 'Kliknij prawym przyciskiem myszy, aby dodać bloki';
+
+            if (!currentWorkspace || !currentWorkspace.blocks) {
+                drawWires();
+                updateStats();
+                return;
+            }
+
+            // 1. RENDEROWANIE NOTATEK (Notes) z workspaces.json
+            if (currentWorkspace.notes && Array.isArray(currentWorkspace.notes)) {
+                currentWorkspace.notes.forEach((note) => {
+                    const noteEl = document.createElement('div');
+                    noteEl.className = 'dbb-note';
+                    noteEl.style.left = `${note.x}px`;
+                    noteEl.style.top = `${note.y}px`;
+                    noteEl.style.width = `${note.width || 400}px`;
+                    noteEl.style.height = `${note.height || 200}px`;
+                    if (note.color && note.color.trim()) {
+                        noteEl.style.borderColor = note.color;
+                        noteEl.style.background = `${note.color}0a`;
+                    }
+                    const noteHeader = document.createElement('div');
+                    noteHeader.className = 'dbb-note-header';
+                    if (note.color && note.color.trim()) noteHeader.style.color = note.color;
+                    noteHeader.innerHTML = `<span>📁 ${escapeHTML(note.title || 'Obszar')}</span>`;
+                    noteEl.appendChild(noteHeader);
+                    container.appendChild(noteEl);
+                });
+            }
+
+            // 2. RENDEROWANIE BLOKÓW
+            currentWorkspace.blocks.forEach((block, idx) => {
+                try {
+                    const blockDef = getBlockFullDef(block);
+                    const catSlug = getCategorySlug(blockDef ? blockDef.category : '');
+                    const catIcon = getCategoryIcon(catSlug);
+
+                    const card = document.createElement('div');
+                    card.className = `dbb-card ${selectedNodeIdx === idx ? 'selected' : ''} ${block.collapsed ? 'collapsed' : ''}`;
+                    card.id = `block_${idx}`;
+                    card.dataset.cat = catSlug;
+                    card.style.left = `${block.x}px`;
+                    card.style.top = `${block.y}px`;
+
+                    if (block.width) {
+                        card.style.width = `${Math.max(240, block.width)}px`;
+                    } else {
+                        card.style.width = '280px';
+                    }
+
+                    if (block.collapsed) {
+                        card.style.height = 'auto';
+                        card.style.maxHeight = 'none';
+                    } else if (block.height) {
+                        card.style.height = `${Math.max(120, block.height)}px`;
+                        card.style.maxHeight = 'none';
+                    } else {
+                        // Domyślny maksymalny limit wysokości dla długich bloków (np. Create Permissions), aby nie rozciągały się w nieskończoność
+                        card.style.maxHeight = '420px';
+                        card.style.height = 'auto';
+                    }
+
+                    // Indywidualny kolor bloku (jeśli ustawiony w workspaces.json)
+                    if (block.color && block.color.trim()) {
+                        card.style.borderColor = block.color;
+                        card.style.boxShadow = `0 0 15px ${block.color}33, var(--shadow-lg)`;
+                    }
+
+                    const prettyTitle = blockDef ? blockDef.name : block.name.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+
+                    // HEADER
+                    const header = document.createElement('div');
+                    header.className = 'dbb-header';
+                    if (block.color && block.color.trim()) {
+                        header.style.background = `${block.color}22`;
+                    }
+
+                    header.innerHTML = `
+                        <div class="header-left">
+                            <span class="dbb-collapse-btn" title="${block.collapsed ? 'Rozwiń blok' : 'Zwiń blok'}" onclick="toggleCollapseBlock(event, ${idx})">${block.collapsed ? '▸' : '▾'}</span>
+                            <span class="header-cat-icon">${catIcon}</span>
+                            <span style="overflow:hidden; text-overflow:ellipsis;" title="${prettyTitle}">${prettyTitle}</span>
+                        </div>
+                        <div class="collapsed-ports" id="collapsed_ports_${idx}"></div>
+                        <span class="dbb-close-btn" onclick="deleteBlock(event, ${idx})" title="Usuń blok">✕</span>
+                    `;
+
+                    // Porty w nagłówku, gdy blok jest zwinięty
+                    const collapsedPortsEl = header.querySelector('.collapsed-ports');
+                    if (block.collapsed && collapsedPortsEl) {
+                        const hasActionIn = (block.inputs && block.inputs.action !== undefined) || (blockDef && blockDef.inputs && blockDef.inputs.some(i => i.id === 'action'));
+                        const hasActionOut = (block.outputs && block.outputs.action !== undefined) || (blockDef && blockDef.outputs && blockDef.outputs.some(o => o.id === 'action'));
+                        if (hasActionIn) {
+                            const inDot = document.createElement('span');
+                            inDot.className = 'port-dot action';
+                            inDot.style.cssText = 'width: 10px; height: 10px; border-radius: 3px;';
+                            inDot.title = 'Action (Wejście)';
+                            collapsedPortsEl.appendChild(inDot);
+                        }
+                        if (hasActionOut) {
+                            const outDot = document.createElement('span');
+                            outDot.className = 'port-dot action-out';
+                            outDot.style.cssText = 'width: 11px; height: 10px;';
+                            outDot.title = 'Action (Wyjście)';
+                            collapsedPortsEl.appendChild(outDot);
+                        }
+                    }
+
+                    header.ondblclick = (e) => {
+                        if (e.target.classList.contains('dbb-close-btn')) return;
+                        toggleCollapseBlock(e, idx);
+                    };
+
+                    // ═══════ STRUKTURA KARTY: WEJŚCIA PO LEWEJ, ŚRODEK SCROLLOWANY, WYJŚCIA PO PRAWEJ ═══════
+                    const bodyWrap = document.createElement('div');
+                    bodyWrap.className = 'dbb-card-body-wrap';
+
+                    // ŚRODEK SCROLLOWANY: TYLKO ZAWARTOŚĆ W ŚRODKU JEST PRZEWIJANA
+                    const centerScroll = document.createElement('div');
+                    centerScroll.className = 'dbb-center-scroll';
+
+                    centerScroll.addEventListener('wheel', (e) => {
+                        e.stopPropagation();
+                    }, { passive: false });
+
+                    centerScroll.addEventListener('scroll', () => {
+                        drawWires();
+                    });
+
+                    // OPTIONS
+                    const optionsBox = document.createElement('div');
+                    optionsBox.className = 'dbb-options-box';
+
+                    const optList = (blockDef && Array.isArray(blockDef.options) && blockDef.options.length > 0)
+                        ? [...blockDef.options]
+                        : [];
+                    if (block.options) {
+                        Object.keys(block.options).forEach(savedKey => {
+                            if (!optList.some(o => o.id === savedKey)) {
+                                optList.push({ id: savedKey, name: savedKey, type: typeof block.options[savedKey] === 'boolean' ? 'CHECKBOX' : 'TEXT' });
+                            }
+                        });
+                    }
+
+                    if (optList.length > 0) {
+                        optList.forEach(opt => {
+                            const optRow = document.createElement('div');
+                            optRow.className = 'dbb-opt-item';
+                            optRow.innerHTML = `<label>${opt.name || opt.id}</label>`;
+
+                            const optType = (opt.type || 'TEXT').toUpperCase();
+
+                            if (optType === 'SELECT' && opt.options) {
+                                const sel = document.createElement('select');
+                                sel.className = 'dbb-select';
+
+                                const optionsData = opt.options;
+                                if (Array.isArray(optionsData)) {
+                                    optionsData.forEach(sub => {
+                                        if (sub.type === 'GROUP' && Array.isArray(sub.options)) {
+                                            const grp = document.createElement('optgroup');
+                                            grp.label = sub.name;
+                                            sub.options.forEach(o => {
+                                                if (o.type === 'GROUP' && Array.isArray(o.options)) {
+                                                    o.options.forEach(inner => {
+                                                        const optEl = document.createElement('option');
+                                                        optEl.value = inner.id;
+                                                        optEl.innerText = `${o.name}: ${inner.name}`;
+                                                        grp.appendChild(optEl);
+                                                    });
+                                                } else {
+                                                    const optEl = document.createElement('option');
+                                                    optEl.value = o.id;
+                                                    optEl.innerText = o.name;
+                                                    grp.appendChild(optEl);
+                                                }
+                                            });
+                                            sel.appendChild(grp);
+                                        } else {
+                                            const optEl = document.createElement('option');
+                                            optEl.value = sub.id;
+                                            optEl.innerText = sub.name;
+                                            sel.appendChild(optEl);
+                                        }
+                                    });
+                                } else if (typeof optionsData === 'object') {
+                                    for (const [key, val] of Object.entries(optionsData)) {
+                                        const optEl = document.createElement('option');
+                                        optEl.value = key;
+                                        optEl.innerText = val;
+                                        sel.appendChild(optEl);
+                                    }
+                                }
+
+                                sel.value = (block.options && block.options[opt.id] !== undefined) ? block.options[opt.id] : (opt.defaultValue || '');
+                                sel.onchange = (e) => {
+                                    if (!block.options) block.options = {};
+                                    block.options[opt.id] = e.target.value;
+                                };
+                                optRow.appendChild(sel);
+                            } else if (optType === 'CHECKBOX') {
+                                const chkLabel = document.createElement('label');
+                                chkLabel.style.cssText = 'display:flex; align-items:center; gap:6px; cursor:pointer; text-transform:none; color:var(--text-secondary); font-size:12px;';
+                                const chk = document.createElement('input');
+                                chk.type = 'checkbox';
+                                chk.checked = Boolean(block.options && block.options[opt.id] !== undefined ? block.options[opt.id] : opt.defaultValue);
+                                chk.onchange = (e) => {
+                                    if (!block.options) block.options = {};
+                                    block.options[opt.id] = e.target.checked;
+                                };
+                                chkLabel.appendChild(chk);
+                                chkLabel.appendChild(document.createTextNode('Włączone'));
+                                optRow.appendChild(chkLabel);
+                            } else {
+                                const inp = document.createElement('input');
+                                inp.className = 'dbb-input';
+                                inp.type = optType === 'COLOR' ? 'color' : 'text';
+                                inp.placeholder = opt.description ? opt.description.split('\n')[0].substring(0, 40) : '';
+                                inp.value = (block.options && block.options[opt.id] !== undefined) ? block.options[opt.id] : (opt.defaultValue || '');
+                                inp.oninput = (e) => {
+                                    if (!block.options) block.options = {};
+                                    block.options[opt.id] = e.target.value;
+                                };
+                                optRow.appendChild(inp);
+                            }
+
+                            optionsBox.appendChild(optRow);
+                        });
+                    } else {
+                        optionsBox.style.display = 'none';
+                    }
+
+                    // PORTS
+                    const portsRow = document.createElement('div');
+                    portsRow.className = 'dbb-row';
+
+                    // Inputs
+                    const leftPorts = document.createElement('div');
+                    leftPorts.className = 'dbb-ports-col inputs';
+                    const inputKeys = new Set(Object.keys(block.inputs || {}));
+                    if (blockDef && blockDef.inputs) blockDef.inputs.forEach(i => inputKeys.add(i.id));
+
+                    inputKeys.forEach(key => {
+                        const portWrapper = buildPort(key, idx, false, blockDef);
+                        portWrapper.addEventListener('mouseup', (e) => {
+                            if (connectingWire && connectingWire.type === 'output') {
+                                e.stopPropagation();
+                                finishConnectingWire(connectingWire.blockIdx, connectingWire.portKey, idx, key);
+                            }
+                        });
+                        leftPorts.appendChild(portWrapper);
+                    });
+
+                    // Outputs
+                    const rightPorts = document.createElement('div');
+                    rightPorts.className = 'dbb-ports-col outputs';
+                    const outputKeys = new Set(Object.keys(block.outputs || {}));
+                    if (blockDef && blockDef.outputs) blockDef.outputs.forEach(o => outputKeys.add(o.id));
+
+                    outputKeys.forEach(key => {
+                        const isAction = key.toLowerCase().includes('action');
+                        const portWrapper = buildPort(key, idx, true, blockDef);
+
+                        const dot = portWrapper.querySelector('.port-dot');
+                        dot.addEventListener('mousedown', (e) => {
+                            e.stopPropagation();
+                            startConnectingWire(idx, key, isAction);
+                        });
+
+                        rightPorts.appendChild(portWrapper);
+                    });
+
+                    if (inputKeys.size === 0) leftPorts.style.display = 'none';
+                    if (outputKeys.size === 0) rightPorts.style.display = 'none';
+                    if (optList.length === 0) centerScroll.style.display = 'none';
+
+                    centerScroll.appendChild(optionsBox);
+
+                    bodyWrap.appendChild(leftPorts);
+                    bodyWrap.appendChild(centerScroll);
+                    bodyWrap.appendChild(rightPorts);
+
+                    card.appendChild(header);
+                    card.appendChild(bodyWrap);
+
+                    // UCHWYTY ZMIANY ROZMIARU (Narożnik, Prawa krawędź, Dolna krawędź)
+                    const resizeHandle = document.createElement('div');
+                    resizeHandle.className = 'dbb-resize-handle';
+                    resizeHandle.title = 'Przeciągnij, aby zmienić szerokość i wysokość bloku';
+                    resizeHandle.addEventListener('mousedown', (e) => {
+                        e.stopPropagation();
+                        startResizeBlock(e, idx, 'both');
+                    });
+                    card.appendChild(resizeHandle);
+
+                    const resizeEdgeR = document.createElement('div');
+                    resizeEdgeR.className = 'dbb-resize-edge-r';
+                    resizeEdgeR.title = 'Przeciągnij krawędź, aby zmienić szerokość bloku';
+                    resizeEdgeR.addEventListener('mousedown', (e) => {
+                        e.stopPropagation();
+                        startResizeBlock(e, idx, 'width');
+                    });
+                    card.appendChild(resizeEdgeR);
+
+                    const resizeEdgeB = document.createElement('div');
+                    resizeEdgeB.className = 'dbb-resize-edge-b';
+                    resizeEdgeB.title = 'Przeciągnij krawędź, aby zmienić wysokość bloku';
+                    resizeEdgeB.addEventListener('mousedown', (e) => {
+                        e.stopPropagation();
+                        startResizeBlock(e, idx, 'height');
+                    });
+                    card.appendChild(resizeEdgeB);
+
+                    // DRAG
+                    card.addEventListener('mousedown', (e) => {
+                        if (e.button !== 0 ||
+                            e.target.classList.contains('dbb-close-btn') ||
+                            e.target.classList.contains('dbb-collapse-btn') ||
+                            e.target.classList.contains('dbb-resize-handle') ||
+                            e.target.classList.contains('dbb-resize-edge-r') ||
+                            e.target.classList.contains('dbb-resize-edge-b') ||
+                            e.target.classList.contains('port-dot') ||
+                            e.target.tagName === 'INPUT' ||
+                            e.target.tagName === 'SELECT' ||
+                            e.target.tagName === 'TEXTAREA' ||
+                            e.target.tagName === 'LABEL') return;
+
+                        const cScroll = card.querySelector('.dbb-center-scroll');
+                        if (cScroll && cScroll.scrollHeight > cScroll.clientHeight && e.clientX >= cScroll.getBoundingClientRect().right - 14) return;
+                        e.stopPropagation();
+
+                        selectedNodeIdx = idx;
+                        document.querySelectorAll('.dbb-card').forEach(c => c.classList.remove('selected'));
+                        card.classList.add('selected');
+
+                        const areaRect = document.getElementById('canvasArea').getBoundingClientRect();
+                        isDraggingBlock = true;
+                        dragBlockIdx = idx;
+                        dragOffset.x = ((e.clientX - areaRect.left - panX) / zoomScale) - block.x;
+                        dragOffset.y = ((e.clientY - areaRect.top - panY) / zoomScale) - block.y;
+                    });
+
+                    container.appendChild(card);
+                } catch (err) {
+                    console.error(`Błąd renderowania bloku #${idx} (${block?.name}):`, err);
+                }
+            });
+
+            requestAnimationFrame(drawWires);
+            updateStats();
+            updateMinimap();
+        }
+
+        // ZWIJANIE / ROZWIJANIE BLOKU
+        function toggleCollapseBlock(e, idx) {
+            if (e) e.stopPropagation();
+            if (!currentWorkspace || !currentWorkspace.blocks[idx]) return;
+            const block = currentWorkspace.blocks[idx];
+            block.collapsed = !block.collapsed;
+            renderCanvas();
+        }
+
+        // RESIZE BLOKU (Narożnik lub krawędzie)
+        function startResizeBlock(e, idx, mode = 'both') {
+            e.stopPropagation();
+            isResizingBlock = true;
+            resizeBlockIdx = idx;
+            resizeMode = mode;
+            const card = document.getElementById(`block_${idx}`);
+            const block = currentWorkspace.blocks[idx];
+            resizeStart = {
+                x: e.clientX,
+                y: e.clientY,
+                w: card ? card.offsetWidth : (block.width || 300),
+                h: card ? card.offsetHeight : (block.height || 180)
+            };
+        }
+
+        function buildPort(key, blockIdx, isOutput, blockDef) {
+            const isAction = key.toLowerCase().includes('action');
+            let colorClass = isAction ? (isOutput ? 'action-out' : 'action') : 'green';
+            if (['server', 'guild'].some(k => key.toLowerCase().includes(k))) colorClass = 'blue';
+            else if (['user', 'member'].some(k => key.toLowerCase().includes(k))) colorClass = 'cyan';
+            else if (['channel', 'thread'].some(k => key.toLowerCase().includes(k))) colorClass = 'blue';
+            else if (['interaction', 'command'].some(k => key.toLowerCase().includes(k))) colorClass = 'orange';
+
+            let portName = key;
+            if (blockDef) {
+                const portDefs = isOutput ? blockDef.outputs : blockDef.inputs;
+                if (portDefs) {
+                    const pd = portDefs.find(p => p.id === key);
+                    if (pd && pd.name) portName = pd.name;
+                }
+            }
+
+            const portWrapper = document.createElement('div');
+            portWrapper.className = 'port-item';
+            if (isOutput) {
+                portWrapper.dataset.outputKey = key;
+            } else {
+                portWrapper.dataset.inputKey = key;
+            }
+            portWrapper.dataset.blockIdx = blockIdx;
+
+            if (isOutput) {
+                portWrapper.innerHTML = `
+                    <span>${portName}</span>
+                    <span class="port-dot ${colorClass}"></span>
+                `;
+            } else {
+                portWrapper.innerHTML = `
+                    <span class="port-dot ${colorClass}"></span>
+                    <span>${portName}</span>
+                `;
+            }
+
+            return portWrapper;
+        }
+
+        // ═══════ WIRES ═══════
+        // Oblicza pozycję kropki portu w wewnętrznym układzie współrzędnych canvasContent (niezależnie od zoomScale i stanu zwinięcia!)
+        function getPortCenterInCanvas(portDotEl, isOutput = false, cardEl = null) {
+            const canvasContent = document.getElementById('canvasContent');
+            const contentRect = canvasContent.getBoundingClientRect();
+
+            if (portDotEl) {
+                const dotRect = portDotEl.getBoundingClientRect();
+                if (dotRect.width > 0 && dotRect.height > 0) {
+                    return {
+                        x: ((dotRect.left + dotRect.width / 2) - contentRect.left) / zoomScale,
+                        y: ((dotRect.top + dotRect.height / 2) - contentRect.top) / zoomScale
+                    };
+                }
+            }
+
+            // Fallback: jeśli blok jest zwinięty lub port ukryty, łączymy z kropkami nagłówka karty
+            if (cardEl) {
+                if (cardEl.classList.contains('collapsed')) {
+                    const cDot = isOutput 
+                        ? cardEl.querySelector('.collapsed-ports .port-dot.action-out')
+                        : cardEl.querySelector('.collapsed-ports .port-dot.action');
+                    if (cDot) {
+                        const dRect = cDot.getBoundingClientRect();
+                        if (dRect.width > 0) {
+                            return {
+                                x: ((dRect.left + dRect.width / 2) - contentRect.left) / zoomScale,
+                                y: ((dRect.top + dRect.height / 2) - contentRect.top) / zoomScale
+                            };
+                        }
+                    }
+                }
+                const cRect = cardEl.getBoundingClientRect();
+                return {
+                    x: isOutput ? ((cRect.right - 14) - contentRect.left) / zoomScale : ((cRect.left + 14) - contentRect.left) / zoomScale,
+                    y: ((cRect.top + 20) - contentRect.top) / zoomScale
+                };
+            }
+            return { x: 0, y: 0 };
+        }
+
+        function drawWires() {
+            const svg = document.getElementById('wiresSvg');
+            svg.innerHTML = '';
+
+            if (!currentWorkspace || !currentWorkspace.blocks) return;
+
+            const outputIdMap = new Map();
+            currentWorkspace.blocks.forEach((block, bIdx) => {
+                if (!block.outputs) return;
+                Object.entries(block.outputs).forEach(([outKey, targets]) => {
+                    if (Array.isArray(targets)) {
+                        targets.flat().forEach(t => {
+                            if (typeof t === 'string' && t.trim() !== '') {
+                                outputIdMap.set(t, { bIdx, outKey });
+                            }
+                        });
+                    }
+                });
+            });
+
+            currentWorkspace.blocks.forEach((targetBlock, targetIdx) => {
+                if (!targetBlock.inputs) return;
+                Object.entries(targetBlock.inputs).forEach(([inKey, inVal]) => {
+                    const idsToMatch = Array.isArray(inVal) ? inVal : [inVal];
+                    idsToMatch.forEach(wireId => {
+                        if (typeof wireId === 'string' && outputIdMap.has(wireId)) {
+                            const source = outputIdMap.get(wireId);
+                            renderWire(source.bIdx, source.outKey, targetIdx, inKey, wireId);
+                        }
+                    });
+                });
+            });
+
+            if (connectingWire) {
+                renderTemporaryWire();
+            }
+        }
+
+        function renderWire(sourceIdx, outKey, targetIdx, inKey, wireId) {
+            const svg = document.getElementById('wiresSvg');
+            const sourceCard = document.getElementById(`block_${sourceIdx}`);
+            const targetCard = document.getElementById(`block_${targetIdx}`);
+            if (!sourceCard || !targetCard) return;
+
+            const sourcePort = sourceCard.querySelector(`[data-output-key="${outKey}"] .port-dot`);
+            const targetPort = targetCard.querySelector(`[data-input-key="${inKey}"] .port-dot`);
+
+            const p1 = getPortCenterInCanvas(sourcePort, true, sourceCard);
+            const p2 = getPortCenterInCanvas(targetPort, false, targetCard);
+
+            const dx = Math.max(60, Math.abs(p2.x - p1.x) * 0.5);
+            const pathData = `M ${p1.x} ${p1.y} C ${p1.x + dx} ${p1.y}, ${p2.x - dx} ${p2.y}, ${p2.x} ${p2.y}`;
+
+            const isAction = outKey.toLowerCase().includes('action') || inKey.toLowerCase().includes('action');
+            const color = isAction ? 'var(--wire-action)' : 'var(--wire-data)';
+
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', pathData);
+            path.setAttribute('stroke', color);
+            path.classList.add('wire-path');
+
+            path.addEventListener('click', (e) => {
+                e.stopPropagation();
+                deleteWire(sourceIdx, outKey, targetIdx, inKey, wireId);
+                showToast('Połączenie usunięte', 'info');
+            });
+
+            svg.appendChild(path);
+        }
+
+        function deleteWire(sourceIdx, outKey, targetIdx, inKey, wireId) {
+            const sBlock = currentWorkspace.blocks[sourceIdx];
+            const tBlock = currentWorkspace.blocks[targetIdx];
+
+            if (sBlock && sBlock.outputs && sBlock.outputs[outKey]) {
+                sBlock.outputs[outKey] = sBlock.outputs[outKey].map(item => {
+                    if (Array.isArray(item)) return item.filter(w => w !== wireId);
+                    return item;
+                }).filter(x => x !== wireId);
+            }
+            if (tBlock && tBlock.inputs && tBlock.inputs[inKey]) {
+                if (Array.isArray(tBlock.inputs[inKey])) {
+                    tBlock.inputs[inKey] = tBlock.inputs[inKey].filter(x => x !== wireId);
+                } else {
+                    delete tBlock.inputs[inKey];
+                }
+            }
+            drawWires();
+            updateStats();
+        }
+
+        function startConnectingWire(blockIdx, portKey, isAction) {
+            const sourceCard = document.getElementById(`block_${blockIdx}`);
+            const sourcePort = sourceCard?.querySelector(`[data-output-key="${portKey}"] .port-dot`);
+            const startPos = getPortCenterInCanvas(sourcePort, true, sourceCard);
+            connectingWire = { type: 'output', blockIdx, portKey, isAction, currentX: startPos.x, currentY: startPos.y };
+        }
+
+        function renderTemporaryWire() {
+            const svg = document.getElementById('wiresSvg');
+            const sourceCard = document.getElementById(`block_${connectingWire.blockIdx}`);
+            if (!sourceCard) return;
+
+            const sourcePort = sourceCard.querySelector(`[data-output-key="${connectingWire.portKey}"] .port-dot`);
+            const p1 = getPortCenterInCanvas(sourcePort, true, sourceCard);
+            const p2 = { x: connectingWire.currentX, y: connectingWire.currentY };
+
+            const dx = Math.max(60, Math.abs(p2.x - p1.x) * 0.5);
+            const pathData = `M ${p1.x} ${p1.y} C ${p1.x + dx} ${p1.y}, ${p2.x - dx} ${p2.y}, ${p2.x} ${p2.y}`;
+
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', pathData);
+            path.setAttribute('stroke', connectingWire.isAction ? 'var(--wire-action)' : 'var(--wire-data)');
+            path.setAttribute('stroke-width', '2');
+            path.setAttribute('stroke-dasharray', '8,4');
+            path.setAttribute('fill', 'none');
+            path.setAttribute('opacity', '0.7');
+            svg.appendChild(path);
+        }
+
+        function finishConnectingWire(sourceIdx, outKey, targetIdx, inKey) {
+            const sourceBlock = currentWorkspace.blocks[sourceIdx];
+            const targetBlock = currentWorkspace.blocks[targetIdx];
+            if (!sourceBlock || !targetBlock) return;
+
+            const newWireId = Math.random().toString(36).substring(2, 12);
+
+            if (!sourceBlock.outputs) sourceBlock.outputs = {};
+            if (!sourceBlock.outputs[outKey]) sourceBlock.outputs[outKey] = [];
+
+            if (Array.isArray(sourceBlock.outputs[outKey][0])) {
+                sourceBlock.outputs[outKey][0].push(newWireId);
+            } else {
+                sourceBlock.outputs[outKey].push(newWireId);
+            }
+
+            if (!targetBlock.inputs) targetBlock.inputs = {};
+            if (Array.isArray(targetBlock.inputs[inKey])) {
+                targetBlock.inputs[inKey].push(newWireId);
+            } else {
+                targetBlock.inputs[inKey] = newWireId;
+            }
+
+            connectingWire = null;
+            drawWires();
+            updateStats();
+        }
+
+        // ═══════ CANVAS EVENTS ═══════
+        function setupCanvasEvents() {
+            const canvasArea = document.getElementById('canvasArea');
+            const canvasContent = document.getElementById('canvasContent');
+
+            canvasArea.addEventListener('mousedown', (e) => {
+                hideContextMenu();
+                if (e.button === 0 && !isDraggingBlock && !isResizingBlock && !connectingWire) {
+                    isPanning = true;
+                    startPan.x = e.clientX - panX;
+                    startPan.y = e.clientY - panY;
+                    canvasArea.style.cursor = 'grabbing';
+                }
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (isPanning) {
+                    panX = e.clientX - startPan.x;
+                    panY = e.clientY - startPan.y;
+                    canvasContent.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomScale})`;
+                    drawGrid();
+                } else if (isResizingBlock && resizeBlockIdx !== null && currentWorkspace) {
+                    const block = currentWorkspace.blocks[resizeBlockIdx];
+                    const dx = (e.clientX - resizeStart.x) / zoomScale;
+                    const dy = (e.clientY - resizeStart.y) / zoomScale;
+                    const el = document.getElementById(`block_${resizeBlockIdx}`);
+
+                    if (resizeMode === 'both' || resizeMode === 'width') {
+                        const newW = Math.max(240, Math.round(resizeStart.w + dx));
+                        block.width = newW;
+                        if (el) el.style.width = `${newW}px`;
+                    }
+
+                    if (resizeMode === 'both' || resizeMode === 'height') {
+                        const newH = Math.max(90, Math.round(resizeStart.h + dy));
+                        block.height = newH;
+                        if (el) {
+                            el.style.height = `${newH}px`;
+                            el.style.maxHeight = 'none';
+                        }
+                    }
+
+                    drawWires();
+                    updateMinimap();
+                } else if (isDraggingBlock && dragBlockIdx !== null && currentWorkspace) {
+                    const areaRect = canvasArea.getBoundingClientRect();
+                    const block = currentWorkspace.blocks[dragBlockIdx];
+                    block.x = Math.round(((e.clientX - areaRect.left - panX) / zoomScale) - dragOffset.x);
+                    block.y = Math.round(((e.clientY - areaRect.top - panY) / zoomScale) - dragOffset.y);
+
+                    const el = document.getElementById(`block_${dragBlockIdx}`);
+                    if (el) {
+                        el.style.left = `${block.x}px`;
+                        el.style.top = `${block.y}px`;
+                    }
+                    drawWires();
+                    updateMinimap();
+                } else if (connectingWire) {
+                    const areaRect = canvasArea.getBoundingClientRect();
+                    connectingWire.currentX = (e.clientX - areaRect.left - panX) / zoomScale;
+                    connectingWire.currentY = (e.clientY - areaRect.top - panY) / zoomScale;
+                    drawWires();
+                }
+            });
+
+            window.addEventListener('mouseup', () => {
+                if (isPanning) {
+                    canvasArea.style.cursor = 'default';
+                }
+                isPanning = false;
+                isDraggingBlock = false;
+                dragBlockIdx = null;
+
+                if (isResizingBlock) {
+                    isResizingBlock = false;
+                    resizeBlockIdx = null;
+                    saveToDisk();
+                }
+
+                if (connectingWire) {
+                    connectingWire = null;
+                    drawWires();
+                }
+            });
+
+            canvasArea.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                showContextMenu(e.clientX, e.clientY);
+            });
+
+            // Scroll zoom - wycentrowany względem kursora myszy, bez rozjeżdżania kabli!
+            canvasArea.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const delta = e.deltaY > 0 ? -0.08 : 0.08;
+                zoomCanvas(delta, e.clientX, e.clientY);
+            }, { passive: false });
+
+            // Kliknięcie w minimapę do szybkiej nawigacji
+            const minimapCanvas = document.getElementById('minimapCanvas');
+            if (minimapCanvas) {
+                minimapCanvas.addEventListener('click', (e) => {
+                    if (!currentWorkspace || !currentWorkspace.blocks || currentWorkspace.blocks.length === 0) return;
+                    const mRect = minimapCanvas.getBoundingClientRect();
+                    const clickRatioX = (e.clientX - mRect.left) / mRect.width;
+                    const clickRatioY = (e.clientY - mRect.top) / mRect.height;
+
+                    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                    currentWorkspace.blocks.forEach(b => {
+                        minX = Math.min(minX, b.x);
+                        minY = Math.min(minY, b.y);
+                        maxX = Math.max(maxX, b.x + (b.width || 300));
+                        maxY = Math.max(maxY, b.y + (b.height || 180));
+                    });
+
+                    const targetWorldX = minX + clickRatioX * (maxX - minX);
+                    const targetWorldY = minY + clickRatioY * (maxY - minY);
+
+                    const areaRect = canvasArea.getBoundingClientRect();
+                    panX = Math.round((areaRect.width / 2) - targetWorldX * zoomScale);
+                    panY = Math.round((areaRect.height / 2) - targetWorldY * zoomScale);
+
+                    canvasContent.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomScale})`;
+                    drawGrid();
+                    updateMinimap();
+                });
+            }
+        }
+
+        // ═══════ ZOOM & FIT VIEW ═══════
+        function zoomCanvas(delta, clientX, clientY) {
+            const canvasArea = document.getElementById('canvasArea');
+            const areaRect = canvasArea.getBoundingClientRect();
+
+            const mouseX = (clientX !== undefined) ? (clientX - areaRect.left) : (areaRect.width / 2);
+            const mouseY = (clientY !== undefined) ? (clientY - areaRect.top) : (areaRect.height / 2);
+
+            const oldZoom = zoomScale;
+            const newZoom = Math.max(0.15, Math.min(2.5, Math.round((zoomScale + delta) * 100) / 100));
+            if (newZoom === oldZoom) return;
+
+            const worldX = (mouseX - panX) / oldZoom;
+            const worldY = (mouseY - panY) / oldZoom;
+
+            zoomScale = newZoom;
+
+            panX = Math.round(mouseX - worldX * zoomScale);
+            panY = Math.round(mouseY - worldY * zoomScale);
+
+            const canvasContent = document.getElementById('canvasContent');
+            canvasContent.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomScale})`;
+            document.getElementById('zoomLevel').textContent = Math.round(zoomScale * 100) + '%';
+            drawGrid();
+            updateMinimap();
+        }
+
+        function resetZoom() {
+            zoomScale = 1;
+            panX = 0;
+            panY = 0;
+            const canvasContent = document.getElementById('canvasContent');
+            canvasContent.style.transform = `translate(0px, 0px) scale(1)`;
+            document.getElementById('zoomLevel').textContent = '100%';
+            drawGrid();
+            renderCanvas();
+        }
+
+        // DOPASUJ WIDOK (Wyśrodkuj wszystkie bloki na ekranie)
+        function fitView() {
+            if (!currentWorkspace || !currentWorkspace.blocks || currentWorkspace.blocks.length === 0) {
+                resetZoom();
+                return;
+            }
+
+            const canvasArea = document.getElementById('canvasArea');
+            const areaRect = canvasArea.getBoundingClientRect();
+
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            currentWorkspace.blocks.forEach(b => {
+                const w = b.width || 300;
+                const h = b.height || 180;
+                minX = Math.min(minX, b.x);
+                minY = Math.min(minY, b.y);
+                maxX = Math.max(maxX, b.x + w);
+                maxY = Math.max(maxY, b.y + h);
+            });
+
+            if (currentWorkspace.notes && Array.isArray(currentWorkspace.notes)) {
+                currentWorkspace.notes.forEach(n => {
+                    minX = Math.min(minX, n.x);
+                    minY = Math.min(minY, n.y);
+                    maxX = Math.max(maxX, n.x + (n.width || 400));
+                    maxY = Math.max(maxY, n.y + (n.height || 200));
+                });
+            }
+
+            const pad = 80;
+            minX -= pad;
+            minY -= pad;
+            maxX += pad;
+            maxY += pad;
+
+            const totalW = Math.max(100, maxX - minX);
+            const totalH = Math.max(100, maxY - minY);
+
+            const scaleX = areaRect.width / totalW;
+            const scaleY = areaRect.height / totalH;
+            let newScale = Math.min(scaleX, scaleY);
+            newScale = Math.max(0.15, Math.min(1.0, newScale));
+            newScale = Math.round(newScale * 100) / 100;
+
+            zoomScale = newScale;
+
+            const centerWorldX = (minX + maxX) / 2;
+            const centerWorldY = (minY + maxY) / 2;
+
+            panX = Math.round((areaRect.width / 2) - centerWorldX * zoomScale);
+            panY = Math.round((areaRect.height / 2) - centerWorldY * zoomScale);
+
+            const canvasContent = document.getElementById('canvasContent');
+            canvasContent.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomScale})`;
+            document.getElementById('zoomLevel').textContent = Math.round(zoomScale * 100) + '%';
+            drawGrid();
+            drawWires();
+            updateMinimap();
+        }
+
+        // ═══════ MINIMAP ═══════
+        function updateMinimap() {
+            if (!currentWorkspace || !currentWorkspace.blocks || currentWorkspace.blocks.length === 0) return;
+
+            const canvas = document.getElementById('minimapCanvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Background
+            ctx.fillStyle = 'rgba(17, 18, 22, 0.9)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Find bounds
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            currentWorkspace.blocks.forEach(b => {
+                minX = Math.min(minX, b.x);
+                minY = Math.min(minY, b.y);
+                maxX = Math.max(maxX, b.x + (b.width || 270));
+                maxY = Math.max(maxY, b.y + (b.height || 150));
+            });
+
+            const padding = 100;
+            minX -= padding;
+            minY -= padding;
+            maxX += padding;
+            maxY += padding;
+
+            const rangeX = maxX - minX || 1;
+            const rangeY = maxY - minY || 1;
+            const scale = Math.min(canvas.width / rangeX, canvas.height / rangeY);
+
+            // Draw blocks as colored rectangles
+            currentWorkspace.blocks.forEach(b => {
+                const blockDef = installedBlocks.find(bd => bd.idName === b.name);
+                const catSlug = getCategorySlug(blockDef ? blockDef.category : '');
+                ctx.fillStyle = getCategoryColor(catSlug) + '88';
+
+                const x = (b.x - minX) * scale;
+                const y = (b.y - minY) * scale;
+                const w = (b.width || 270) * scale;
+                const h = (b.height || 80) * scale;
+                ctx.fillRect(x, y, Math.max(w, 3), Math.max(h, 2));
+            });
+        }
+
+        // ═══════ CONTEXT MENU ═══════
+        function showContextMenu(clientX, clientY) {
+            const menu = document.getElementById('contextMenu');
+            menu.style.display = 'flex';
+
+            const menuW = 280, menuH = 450;
+            let x = clientX, y = clientY;
+            if (x + menuW > window.innerWidth) x = window.innerWidth - menuW - 10;
+            if (y + menuH > window.innerHeight) y = window.innerHeight - menuH - 10;
+            menu.style.left = `${x}px`;
+            menu.style.top = `${y}px`;
+
+            const areaRect = document.getElementById('canvasArea').getBoundingClientRect();
+            ctxMenuPos.x = Math.round((clientX - areaRect.left - panX) / zoomScale);
+            ctxMenuPos.y = Math.round((clientY - areaRect.top - panY) / zoomScale);
+
+            document.getElementById('ctxSearch').value = '';
+            renderContextMenuItems(installedBlocks);
+            setTimeout(() => document.getElementById('ctxSearch').focus(), 50);
+        }
+
+        function hideContextMenu() {
+            document.getElementById('contextMenu').style.display = 'none';
+        }
+
+        function renderContextMenuItems(blocks) {
+            const list = document.getElementById('ctxList');
+            list.innerHTML = '';
+
+            const categories = {};
+            blocks.forEach(b => {
+                if (!categories[b.category]) categories[b.category] = [];
+                categories[b.category].push(b);
+            });
+
+            for (const [cat, bList] of Object.entries(categories)) {
+                const catSlug = getCategorySlug(cat);
+                const catColor = getCategoryColor(catSlug);
+
+                const catHeader = document.createElement('div');
+                catHeader.className = 'context-category';
+                catHeader.innerText = cat;
+                list.appendChild(catHeader);
+
+                bList.forEach(block => {
+                    const item = document.createElement('div');
+                    item.className = 'context-item';
+                    item.innerHTML = `<span class="context-item-dot" style="background:${catColor}"></span> ${block.name}`;
+                    item.onclick = () => {
+                        spawnBlockAtPos(block, ctxMenuPos.x, ctxMenuPos.y);
+                        hideContextMenu();
+                    };
+                    list.appendChild(item);
+                });
+            }
+        }
+
+        function filterContextMenu() {
+            const q = document.getElementById('ctxSearch').value.toLowerCase();
+            const filtered = installedBlocks.filter(b =>
+                b.name.toLowerCase().includes(q) || b.category.toLowerCase().includes(q) ||
+                b.idName.toLowerCase().includes(q)
+            );
+            renderContextMenuItems(filtered);
+        }
+
+        // ═══════ BLOCK MANAGEMENT ═══════
+        function spawnBlockAtPos(blockDef, x, y) {
+            if (!currentWorkspace) {
+                showToast('Wybierz workspace!', 'error');
+                return;
+            }
+            if (!currentWorkspace.blocks) currentWorkspace.blocks = [];
+
+            const inputsObj = {};
+            if (blockDef.inputs) blockDef.inputs.forEach(i => inputsObj[i.id] = i.multiInput ? [] : "");
+
+            const outputsObj = {};
+            if (blockDef.outputs) blockDef.outputs.forEach(o => outputsObj[o.id] = o.multiOutput ? [[]] : []);
+
+            const optionsObj = {};
+            if (blockDef.options) blockDef.options.forEach(o => optionsObj[o.id] = o.defaultValue !== undefined ? o.defaultValue : "");
+
+            const newBlock = {
+                color: "",
+                x: x,
+                y: y,
+                z: 0,
+                width: 300,
+                height: 180,
+                lock: false,
+                name: blockDef.idName,
+                inputs: inputsObj,
+                options: optionsObj,
+                outputs: outputsObj,
+                active: true
+            };
+
+            currentWorkspace.blocks.push(newBlock);
+            renderCanvas();
+            showToast(`Dodano: ${blockDef.name}`, 'success');
+        }
+
+        function deleteBlock(e, index) {
+            e.stopPropagation();
+            if (currentWorkspace && currentWorkspace.blocks) {
+                currentWorkspace.blocks.splice(index, 1);
+                selectedNodeIdx = null;
+                renderCanvas();
+                showToast(`Usunięto blok`, 'info');
+            }
+        }
+
+        // ═══════ WORKSPACE MANAGEMENT ═══════
+        function promptNewFolder() {
+            openModal("modalNewFolder");
+        }
+
+        function promptNewWorkspace() {
+            openModal("modalNewWorkspace");
+        }
+
+        // ═══════ SAVE ═══════
+        async function saveToDisk() {
+            const ok = await ipcRenderer.invoke('save-workspaces', rawWorkspacesData);
+            if (ok) {
+                showToast('Zapisano pomyślnie do workspaces.json!', 'success');
+            } else {
+                showToast('Błąd zapisu!', 'error');
+            }
+        }
+
+        // ═══════ GENERATE BOT.JS ═══════
+        async function generateBotJS() {
+            await ipcRenderer.invoke('save-workspaces', rawWorkspacesData);
+            const token = document.getElementById('botToken').value.trim();
+            const res = await ipcRenderer.invoke('generate-bot', token);
+            if (res && res.ok) {
+                showToast('Wygenerowano bot.js oraz zapisano workspaces.json!', 'success');
+                addConsoleLine('⚡ Pomyślnie wygenerowano plik bot.js gotowy do uruchomienia.', 'success');
+            } else {
+                showToast('Błąd generowania bot.js!', 'error');
+                addConsoleLine(`❌ Błąd generowania bot.js: ${res?.error || 'Nieznany błąd'}`, 'error');
+            }
+        }
+
+        // ═══════ KEYBOARD SHORTCUTS ═══════
+        function setupKeyboardShortcuts() {
+            window.addEventListener('keydown', (e) => {
+                // F12 → toggle console
+                if (e.key === 'F12') {
+                    e.preventDefault();
+                    toggleConsole();
+                }
+
+                // Ctrl+S → save
+                if (e.ctrlKey && e.key === 's') {
+                    e.preventDefault();
+                    saveToDisk();
+                }
+
+                // Delete → remove selected block
+                if (e.key === 'Delete' && selectedNodeIdx !== null) {
+                    e.preventDefault();
+                    deleteBlock(e, selectedNodeIdx);
+                }
+
+                // Escape → deselect / close context menu
+                if (e.key === 'Escape') {
+                    hideContextMenu();
+                    selectedNodeIdx = null;
+                    document.querySelectorAll('.dbb-card').forEach(c => c.classList.remove('selected'));
+                }
+
+                // Ctrl+0 → reset zoom
+                if (e.ctrlKey && e.key === '0') {
+                    e.preventDefault();
+                    resetZoom();
+                }
+            });
+        }
+
+        // ═══════ START ═══════
+        
+        
+        // ═══════ OBSŁUGA ZMIANY ROZMIARU PANELU BOCZNEGO I KONSOLI ═══════
+        let isResizingSidebar = false;
+        let isResizingConsole = false;
+
+        function setupPanelResizers() {
+            const sResizer = document.getElementById('sidebarResizer');
+            const cResizer = document.getElementById('consoleResizer');
+            const sidebar = document.getElementById('mainSidebar');
+            const bottomPanel = document.getElementById('bottomPanel');
+
+            if (sResizer && sidebar) {
+                sResizer.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    isResizingSidebar = true;
+                    sResizer.classList.add('active');
+                    document.body.style.cursor = 'col-resize';
+                    document.body.style.userSelect = 'none';
+                });
+            }
+
+            if (cResizer && bottomPanel) {
+                cResizer.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    isResizingConsole = true;
+                    cResizer.classList.add('active');
+                    document.body.style.cursor = 'row-resize';
+                    document.body.style.userSelect = 'none';
+                });
+            }
+
+            window.addEventListener('mousemove', (e) => {
+                if (isResizingSidebar && sidebar) {
+                    const dockWidth = 52;
+                    const newW = Math.max(180, Math.min(550, e.clientX - dockWidth));
+                    sidebar.style.width = `${newW}px`;
+                    sidebar.style.minWidth = `${newW}px`;
+                    resizeCanvasGrid();
+                    drawWires();
+                } else if (isResizingConsole && bottomPanel) {
+                    const newH = Math.max(100, Math.min(650, window.innerHeight - e.clientY));
+                    bottomPanel.style.height = `${newH}px`;
+                    resizeCanvasGrid();
+                    drawWires();
+                }
+            });
+
+            window.addEventListener('mouseup', () => {
+                if (isResizingSidebar) {
+                    isResizingSidebar = false;
+                    sResizer?.classList.remove('active');
+                    document.body.style.cursor = '';
+                    document.body.style.userSelect = '';
+                }
+                if (isResizingConsole) {
+                    isResizingConsole = false;
+                    cResizer?.classList.remove('active');
+                    document.body.style.cursor = '';
+                    document.body.style.userSelect = '';
+                }
+            });
+        }
+
+        // ═══════ VIEW & MODAL MANAGEMENT ═══════
+        function switchView(viewName) {
+            const homeView = document.getElementById('viewHome');
+            const editorView = document.getElementById('viewEditor');
+            const dockHome = document.getElementById('dockBtnHome');
+
+            if (viewName === 'home') {
+                homeView.classList.add('active');
+                editorView.classList.remove('active');
+                dockHome.classList.add('active');
+                document.querySelectorAll('.dbb-dock-ws-btn').forEach(btn => btn.classList.remove('active'));
+                loadRecentProjectsUI();
+            } else {
+                if (!currentProjectName) {
+                    showToast('Wybierz lub utwórz bota, aby wejść do edytora', 'info');
+                    return;
+                }
+                homeView.classList.remove('active');
+                editorView.classList.add('active');
+                dockHome.classList.remove('active');
+
+                if (!currentWorkspace && rawWorkspacesData && rawWorkspacesData.length > 0) {
+                    findAndActivateDefaultWorkspace();
+                } else {
+                    renderDockWorkspaces();
+                }
+
+                setTimeout(() => {
+                    resizeCanvasGrid();
+                    renderCanvas();
+                }, 50);
+            }
+        }
+
+        function openModal(modalId) {
+            const el = document.getElementById(modalId);
+            if (!el) return;
+            el.classList.add('active');
+            const inp = el.querySelector('input');
+            if (inp) {
+                inp.value = '';
+                setTimeout(() => inp.focus(), 50);
+            }
+            if (modalId === 'modalOpenProject') {
+                populateOpenProjectSelect();
+            }
+        }
+
+        function closeModal(modalId) {
+            const el = document.getElementById(modalId);
+            if (el) el.classList.remove('active');
+        }
+
+        async function populateOpenProjectSelect() {
+            const sel = document.getElementById('selectOpenProject');
+            if (!sel) return;
+            sel.innerHTML = '';
+            try {
+                const data = await ipcRenderer.invoke('get-projects');
+                (data.list || ['Mango Bot']).forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p;
+                    opt.textContent = p;
+                    if (p === data.current) opt.selected = true;
+                    sel.appendChild(opt);
+                });
+            } catch(e) {}
+        }
+
+        async function confirmOpenProject() {
+            const sel = document.getElementById('selectOpenProject');
+            if (!sel || !sel.value) return;
+            closeModal('modalOpenProject');
+            await selectAndOpenProject(sel.value);
+        }
+
+        function confirmNewFolder() {
+            const inp = document.getElementById('inputNewFolderTitle');
+            const title = (inp.value || '').trim();
+            if (!title) return;
+            closeModal('modalNewFolder');
+            rawWorkspacesData.push({
+                id: "fld_" + Date.now().toString(36),
+                info: { title: title, collapsed: false },
+                workspaces: []
+            });
+            renderWorkspacesTree();
+            showToast(`Folder "${title}" utworzony!`, 'success');
+        }
+
+        function confirmNewWorkspace() {
+            const inp = document.getElementById('inputNewWsTitle');
+            const title = (inp.value || '').trim();
+            if (!title) return;
+            closeModal('modalNewWorkspace');
+            const newWs = {
+                id: "ws_" + Date.now().toString(36),
+                active: true,
+                info: { title: title, description: "", thumbnail: "" },
+                blocks: [],
+                notes: []
+            };
+            rawWorkspacesData.push(newWs);
+            renderWorkspacesTree();
+            switchWorkspace(newWs);
+            saveToDisk();
+            showToast(`Workspace "${title}" utworzony!`, 'success');
+        }
+
+        function autoUpdateProjectPath() {
+            const name = (document.getElementById('inputNewProjectName').value || '').trim();
+            const pathInp = document.getElementById('inputNewProjectPath');
+            if (name) {
+                const clean = name.replace(/[<>:"/\\|?*]/g, '_');
+                pathInp.value = `/home/rakunek/Dokumenty/Moje/Boty/${clean}`;
+            } else {
+                pathInp.value = '';
+            }
+        }
+
+        async function browseNewProjectFolder() {
+            const pathInp = document.getElementById('inputNewProjectPath');
+            const chosen = await ipcRenderer.invoke('pick-directory', pathInp.value || '/home/rakunek/Dokumenty/Moje/Boty');
+            if (chosen) {
+                pathInp.value = chosen;
+            }
+        }
+
+        async function openProjectDialog() {
+            const res = await ipcRenderer.invoke('open-project-dialog');
+            if (res && res.ok) {
+                showToast(`Załadowano projekt: "${res.current}"`, 'success');
+                await selectAndOpenProject(res.path || res.current);
+            }
+        }
+
+        async function confirmNewProject() {
+            const nameInp = document.getElementById('inputNewProjectName');
+            const pathInp = document.getElementById('inputNewProjectPath');
+            const name = (nameInp.value || '').trim();
+            const targetDir = (pathInp.value || '').trim();
+
+            if (!name) {
+                showToast('Podaj nazwę bota', 'error');
+                return;
+            }
+
+            closeModal('modalNewProject');
+            showToast('Tworzenie projektu i kopiowanie bloków...', 'info');
+
+            const res = await ipcRenderer.invoke('create-project', { name, targetDir });
+            if (res && res.ok) {
+                showToast(`Projekt "${res.current}" pomyślnie utworzony!`, 'success');
+                await selectAndOpenProject(res.path || res.current);
+            } else {
+                showToast(`Błąd: ${res?.error || 'Nieznany'}`, 'error');
+            }
+        }
+
+        async function selectAndOpenProject(projPathOrName) {
+            const res = await ipcRenderer.invoke('switch-project', projPathOrName);
+            if (res.ok) {
+                showToast(`Załadowano bota: "${res.current}"`, 'info');
+                currentProjectName = res.current;
+                document.getElementById('editorProjectTitle').textContent = res.current;
+                if (res.savedToken) {
+                    document.getElementById('botToken').value = res.savedToken;
+                } else {
+                    document.getElementById('botToken').value = '';
+                }
+                currentWorkspace = null;
+                selectedNodeIdx = null;
+                installedBlocks = await ipcRenderer.invoke('get-installed-blocks');
+                rawWorkspacesData = await ipcRenderer.invoke('load-workspaces');
+                renderWorkspacesTree();
+                findAndActivateDefaultWorkspace();
+                switchView('editor');
+            } else {
+                showToast(`Błąd otwierania projektu: ${res.error}`, 'error');
+            }
+        }
+
+        async function loadRecentProjectsUI() {
+            const grid = document.getElementById('recentProjectsGrid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            try {
+                const data = await ipcRenderer.invoke('get-projects');
+                const recent = data.recent || [];
+                if (recent.length === 0) {
+                    grid.innerHTML = '<div style="color:#8c909e; font-size:12px; grid-column:1/-1;">Brak projektów na liście. Kliknij "New Project" lub "Open Project".</div>';
+                    return;
+                }
+                recent.forEach(proj => {
+                    const card = document.createElement('div');
+                    card.className = 'recent-project-card';
+                    card.style.position = 'relative';
+                    card.onclick = () => selectAndOpenProject(proj.path);
+                    card.innerHTML = `
+                        <div class="recent-avatar" style="background: ${proj.color || '#5865f2'};">
+                            ${proj.initials || proj.name.slice(0, 2).toUpperCase()}
+                        </div>
+                        <div class="recent-name" title="${proj.name}">${proj.name}</div>
+                        <div class="recent-workspaces-badge">${proj.wsCount || 0} workspaces</div>
+                        <span class="remove-recent-btn" title="Usuń z listy" onclick="removeRecentProject(event, '${escapeHTML(proj.path)}')">✕</span>
+                    `;
+                    grid.appendChild(card);
+                });
+            } catch (err) {
+                console.error('Błąd wczytywania recent projects:', err);
+            }
+        }
+
+        async function removeRecentProject(event, path) {
+            event.stopPropagation();
+            await ipcRenderer.invoke('remove-recent', path);
+            loadRecentProjectsUI();
+        }
+
+        async function clearRecentProjects() {
+            await ipcRenderer.invoke('clear-recent');
+            showToast('Historia projektów wyczyszczona', 'info');
+            loadRecentProjectsUI();
+        }
+
+        init();
+        loadRecentProjectsUI();
+    </script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "name": "mango-bot-builder",
+  "version": "1.0.0",
+  "description": "Discord Bot Builder Alternative UI for Linux",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron --no-sandbox .",
+    "builder": "electron --no-sandbox ."
+  },
+  "devDependencies": {
+    "electron": "^34.2.0"
+  }
+}
